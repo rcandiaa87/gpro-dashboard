@@ -1,0 +1,802 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("GPRO_DATABASE_URL")
+}
+
+model usuario {
+  usr_id                  Int       @id @default(autoincrement())
+  usr_nick                String?   @db.VarChar(50)
+  usr_pass                String?   @db.VarChar(255)
+  usr_nombre              String?   @db.VarChar(50)
+  usr_apellido            String?   @db.VarChar(50)
+  usr_token               String?   @db.Text
+  usr_idm                 Int?
+  usr_suporter            Int?
+  usr_fecha_alta          DateTime? @db.DateTime(0)
+  usr_fecha_modif         DateTime? @db.DateTime(0)
+  usr_fecha_baja          DateTime? @db.DateTime(0)
+  usr_usr_alta            String?   @db.VarChar(50)
+  usr_usr_modif           String?   @db.VarChar(50)
+  usr_usr_baja            String?   @db.VarChar(50)
+  usr_fecha_deshabilitado DateTime? @db.DateTime(0)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model AvailDrivers {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "IDM_temporada_carrera")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model AvailSponsors {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model AvailTDs {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model CCPHistory {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([carrera], map: "carrera")
+  @@index([temporada], map: "temporada")
+  @@ignore
+}
+
+model CarInfluenceDesgaste {
+  tipo     String @id @db.VarChar(50)
+  chasis   Float? @db.Float
+  engine   Float? @db.Float
+  fwing    Float? @db.Float
+  rwing    Float? @db.Float
+  under    Float? @db.Float
+  sidepods Float? @db.Float
+  cool     Float? @db.Float
+  gear     Float? @db.Float
+  brake    Float? @db.Float
+  susp     Float? @db.Float
+  elec     Float? @db.Float
+}
+
+model CarInfluenceNivel {
+  tipo     String @id @db.VarChar(50)
+  chasis   Float? @db.Float
+  engine   Float? @db.Float
+  fwing    Float? @db.Float
+  rwing    Float? @db.Float
+  under    Float? @db.Float
+  sidepods Float? @db.Float
+  cool     Float? @db.Float
+  gear     Float? @db.Float
+  brake    Float? @db.Float
+  susp     Float? @db.Float
+  elec     Float? @db.Float
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model DriProfile {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+model EntrenamientoPiloto {
+  id          Int     @id @default(autoincrement())
+  descripcion String? @db.VarChar(50)
+  costo       Int?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model EstadoAuto {
+  ea_idm         Int?
+  ea_chasis_lvl  Int?
+  ea_chasis_desg Int?
+  ea_motor_lvl   Int?
+  ea_motor_desg  Int?
+  ea_ad_lvl      Int?
+  ea_ad_desg     Int?
+  ea_at_lvl      Int?
+  ea_at_desg     Int?
+  ea_fp_lvl      Int?
+  ea_fp_desg     Int?
+  ea_pont_lvl    Int?
+  ea_pont_desg   Int?
+  ea_refri_lvl   Int?
+  ea_refri_desg  Int?
+  ea_caja_lvl    Int?
+  ea_caja_desg   Int?
+  ea_freno_lvl   Int?
+  ea_freno_desg  Int?
+  ea_susp_lvl    Int?
+  ea_susp_desg   Int?
+  ea_elec_lvl    Int?
+  ea_elec_desg   Int?
+  ea_fecha_act   DateTime? @db.DateTime(0)
+
+  @@ignore
+}
+
+model EstadoDT {
+  edt_idm       Int       @id
+  jsonstr       String?   @db.LongText
+  edt_lid       Int?
+  edt_mec       Int?
+  edt_elec      Int?
+  edt_aero      Int?
+  edt_exp       Int?
+  edt_pit       Int?
+  edt_mot       Int?
+  edt_fecha_act DateTime? @db.DateTime(0)
+
+  @@index([edt_idm], map: "edt_idm")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model EstadoPiloto {
+  ep_idm           Int?
+  ep_oa            Int?
+  ep_agre          Int?
+  ep_carisma       Int?
+  ep_concentracion Int?
+  ep_experiencia   Int?
+  ep_motivacion    Int?
+  ep_reputacion    Int?
+  ep_resistencia   Int?
+  ep_talento       Int?
+  ep_con_tecnico   Int?
+  ep_peso          Int?
+  ep_fecha_act     DateTime? @db.DateTime(0)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model EstadoStaff {
+  es_idm           Int?
+  es_estress       Int?
+  es_concentracion Int?
+  es_fecha_act     DateTime? @db.DateTime(0)
+
+  @@ignore
+}
+
+model Formulas {
+  id           Int     @id @default(autoincrement())
+  Setup        String? @db.VarChar(50)
+  Clima        String? @db.VarChar(50)
+  TipoCircuito String? @db.VarChar(50)
+  Formula      String? @db.VarChar(1500)
+}
+
+model InfluenciaClima {
+  tipo   String @id @db.VarChar(50)
+  temp   Float? @db.Float
+  offset Float? @db.Float
+  seco   Float? @db.Float
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model InfluenciaPiloto {
+  tipo String? @db.VarChar(50)
+  Conc Float?  @db.Float
+  Tal  Float?  @db.Float
+  Agre Float?  @db.Float
+  Exp  Float?  @db.Float
+  Peso Float?  @db.Float
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model ManSponsors {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+model MarcaCubierta {
+  id     Int     @id @default(autoincrement())
+  Marca  String? @db.VarChar(50)
+  Factor Float?  @db.Float
+  tcd    Float?  @db.Float
+  costo  Int?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model MarcaCubierta_BKP_108 {
+  id     Int     @default(0)
+  Marca  String? @db.VarChar(50)
+  Factor Int?    @default(0)
+  tcd    Float?  @db.Float
+  costo  Int?
+
+  @@ignore
+}
+
+model MercadoDT {
+  ID        Int       @id
+  NAME      String?   @db.VarChar(100)
+  NAT       String?   @db.VarChar(50)
+  OA        Int?
+  LEA       Int?
+  MEC       Int?
+  ELE       Int?
+  AER       Int?
+  EXP       Int?
+  PIT       Int?
+  MOT       Int?
+  AGE       Int?
+  RET       Int?
+  SAL       Int?
+  FEE       Int?
+  OFF       Int?
+  fecha_act DateTime? @db.DateTime(0)
+}
+
+model MercadoPiloto {
+  ID        Int       @id
+  NAME      String?   @db.VarChar(100)
+  NAT       String?   @db.VarChar(50)
+  OA        Int?
+  CON       Int?
+  TAL       Int?
+  EXP       Int?
+  AGG       Int?
+  TEI       Int?
+  STA       Int?
+  CHA       Int?
+  MOT       Int?
+  REP       Int?
+  AGE       Int?
+  WEI       Int?
+  RET       String?   @db.VarChar(50)
+  SAL       Int?
+  FEE       Int?
+  FAV       String?   @db.VarChar(100)
+  OFF       Int?
+  fecha_act DateTime? @db.DateTime(0)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model MoneyLevels {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model NegOverview {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+model Prices {
+  id          Int     @id @default(autoincrement())
+  descripcion String? @db.VarChar(50)
+  porcentaje  Float?  @db.Float
+  parte       String? @db.VarChar(50)
+  costo       Int?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model QualifyResults {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model RaceAnalysis {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([carrera], map: "carrera")
+  @@index([temporada], map: "temporada")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model RaceAnalysisExcel1 {
+  Pista           String? @db.VarChar(255)
+  Detalle         String? @db.VarChar(255)
+  raceQ1TempLow   Int?
+  raceQ1TempHigh  Int?
+  raceQ1HumLow    Int?
+  raceQ1HumHigh   Int?
+  raceQ1RainPLow  Int?
+  raceQ1RainPHigh Int?
+  raceQ2TempLow   Int?
+  raceQ2TempHigh  Int?
+  raceQ2HumLow    Int?
+  raceQ2HumHigh   Int?
+  raceQ2RainPLow  Int?
+  raceQ2RainPHigh Int?
+  raceQ3TempLow   Int?
+  raceQ3TempHigh  Int?
+  raceQ3HumLow    Int?
+  raceQ3HumHigh   Int?
+  raceQ3RainPLow  Int?
+  raceQ3RainPHigh Int?
+  raceQ4TempLow   Int?
+  raceQ4TempHigh  Int?
+  raceQ4HumLow    Int?
+  raceQ4HumHigh   Int?
+  raceQ4RainPLow  Int?
+  raceQ4RainPHigh Int?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model RaceAnalysisExcel2 {
+  Pista           String? @db.VarChar(255)
+  Pais            String? @db.VarChar(255)
+  Temporada       Int?
+  NroCarrera      Int?
+  raceQ1TempLow   Int?
+  raceQ1TempHigh  Int?
+  raceQ1HumLow    Int?
+  raceQ1HumHigh   Int?
+  raceQ1RainPLow  Int?
+  raceQ1RainPHigh Int?
+  raceQ2TempLow   Int?
+  raceQ2TempHigh  Int?
+  raceQ2HumLow    Int?
+  raceQ2HumHigh   Int?
+  raceQ2RainPLow  Int?
+  raceQ2RainPHigh Int?
+  raceQ3TempLow   Int?
+  raceQ3TempHigh  Int?
+  raceQ3HumLow    Int?
+  raceQ3HumHigh   Int?
+  raceQ3RainPLow  Int?
+  raceQ3RainPHigh Int?
+  raceQ4TempLow   Int?
+  raceQ4TempHigh  Int?
+  raceQ4HumLow    Int?
+  raceQ4HumHigh   Int?
+  raceQ4RainPLow  Int?
+  raceQ4RainPHigh Int?
+  jsonstr         String? @db.MediumText
+
+  @@index([NroCarrera], map: "NroCarrera")
+  @@index([Temporada], map: "Temporada")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model RaceAnalysisProcesados {
+  Pista           String? @db.VarChar(255)
+  Pais            String? @db.VarChar(255)
+  Temporada       Int?
+  NroCarrera      Int?
+  q1WeatherTransl String? @db.VarChar(100)
+  q1Temp          Int?
+  q1Hum           Int?
+  q2WeatherTransl String? @db.VarChar(100)
+  q2Temp          Int?
+  q2Hum           Int?
+  raceQ1TempLow   Int?
+  raceQ1TempHigh  Int?
+  raceQ1HumLow    Int?
+  raceQ1HumHigh   Int?
+  raceQ1RainPLow  Int?
+  raceQ1RainPHigh Int?
+  raceQ2TempLow   Int?
+  raceQ2TempHigh  Int?
+  raceQ2HumLow    Int?
+  raceQ2HumHigh   Int?
+  raceQ2RainPLow  Int?
+  raceQ2RainPHigh Int?
+  raceQ3TempLow   Int?
+  raceQ3TempHigh  Int?
+  raceQ3HumLow    Int?
+  raceQ3HumHigh   Int?
+  raceQ3RainPLow  Int?
+  raceQ3RainPHigh Int?
+  raceQ4TempLow   Int?
+  raceQ4TempHigh  Int?
+  raceQ4HumLow    Int?
+  raceQ4HumHigh   Int?
+  raceQ4RainPLow  Int?
+  raceQ4RainPHigh Int?
+
+  @@index([Pais], map: "Pais")
+  @@index([Pista], map: "Pista")
+  @@index([raceQ1TempLow, raceQ1TempHigh, raceQ1HumLow, raceQ1HumHigh, raceQ1RainPLow, raceQ1RainPHigh], map: "q1")
+  @@index([q1Hum], map: "q1Hum")
+  @@index([q1Temp], map: "q1Temp")
+  @@index([q1WeatherTransl], map: "q1WeatherTransl")
+  @@index([raceQ2TempLow, raceQ2TempHigh, raceQ2HumLow, raceQ2HumHigh, raceQ2RainPLow, raceQ2RainPHigh], map: "q2")
+  @@index([q2Hum], map: "q2Hum")
+  @@index([q2Temp], map: "q2Temp")
+  @@index([q2WeatherTransl], map: "q2WeatherTransl")
+  @@index([raceQ3TempLow, raceQ3TempHigh, raceQ3HumLow, raceQ3HumHigh, raceQ3RainPLow, raceQ3RainPHigh], map: "q3")
+  @@index([raceQ4TempLow, raceQ4TempHigh, raceQ4HumLow, raceQ4HumHigh, raceQ4RainPLow, raceQ4RainPHigh], map: "q4")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model StaffAndFacilities {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.LongText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Standings {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TDProfile {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.LongText
+
+  @@index([IDM], map: "IDM")
+  @@index([carrera], map: "carrera")
+  @@index([temporada], map: "temporada")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Testing {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@index([IDM], map: "IDM")
+  @@index([temporada, carrera], map: "temporada_carrera")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Testing_AfterRace {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.LongText
+
+  @@index([IDM], map: "IDM")
+  @@index([carrera], map: "carrera")
+  @@index([temporada], map: "temporada")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Testing_BeforeRace {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.LongText
+
+  @@index([IDM], map: "IDM")
+  @@index([carrera], map: "carrera")
+  @@index([temporada], map: "temporada")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TipoDesgasteCircuito {
+  nombre String? @db.VarChar(50)
+  factor Float?  @db.Float
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TipoDesgasteCubierta {
+  nombre String? @db.VarChar(50)
+  type   Int?
+  factor Float?  @db.Float
+
+  @@ignore
+}
+
+model TrackBaseSetup {
+  id               Int     @id
+  name             String? @db.VarChar(100)
+  wings            Float?
+  engine           Float?
+  brakes           Float?
+  gear             Float?
+  suspension       Float?
+  WSBase           Float?
+  fuelbaseseco     Float?
+  fuelbaselluvia   Float?
+  tyrewear         Float?
+  wearchasis       Float?
+  wearengine       Float?
+  wearadel         Float?
+  wearatra         Float?
+  wearfondo        Float?
+  wearponto        Float?
+  wearrefri        Float?
+  wearcaja         Float?
+  wearfreno        Float?
+  wearsusp         Float?
+  wearelec         Float?
+  engineboost      Float?
+  engineboost1     Float?
+  timegainct       Float?
+  tyreweartipo     String? @db.VarChar(50)
+  length           Float?
+  laps             Float?
+  distance         Float?
+  P                Float?
+  H                Float?
+  A                Float?
+  avgspeed         Float?
+  corners          Float?
+  pitIO            Float?
+  grip             String? @db.VarChar(50)
+  cargaaero        String? @db.VarChar(50)
+  adelantamiento   String? @db.VarChar(50)
+  rigidezsusp      String? @db.VarChar(50)
+  consumocomb      String? @db.VarChar(50)
+  racetimeelitedry Int?
+  racetimeelitewet Int?
+  all_ratio        Float?  @db.Float
+  rok_ratio        Float?  @db.Float
+  ama_ratio        Float?  @db.Float
+  pro_ratio        Float?  @db.Float
+  mas_ratio        Float?  @db.Float
+  elite_ratio      Float?  @db.Float
+}
+
+model Tracks {
+  id          Int      @id
+  name        String?  @db.VarChar(200)
+  natCode     String?  @db.VarChar(10)
+  kms         Decimal? @db.Decimal(20, 6)
+  laps        Int?
+  lapDistance Decimal? @db.Decimal(20, 6)
+  power       Int?
+  handl       Int?
+  accel       Int?
+  category    String?  @db.VarChar(50)
+  gpsHeld     Int?
+}
+
+model dumpCircuitos {
+  id         Int       @id @default(autoincrement())
+  jsonstr    String?   @db.MediumText
+  fecha_alta DateTime? @db.DateTime(0)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model estrategia {
+  usr_idm          Int?
+  clima            Int?
+  ctrisk           Int?
+  goma_marca       String? @db.VarChar(50)
+  goma_tipo        Int?
+  tyrewearlimit    Int?
+  pits             Int?
+  stint1           Int?
+  stint2           Int?
+  stint3           Int?
+  stint4           Int?
+  stint5           Int?
+  boost1           Int?
+  boost2           Int?
+  boost3           Int?
+  boost4           Int?
+  boost5           Int?
+  limitepeticiones Int?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model gruposponsor {
+  grupo     String? @db.VarChar(50)
+  nrogrupo  Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.LongText
+
+  @@index([carrera], map: "carrera")
+  @@index([grupo], map: "grupo")
+  @@index([nrogrupo], map: "nrogrupo")
+  @@index([temporada], map: "temporada")
+  @@ignore
+}
+
+model hist_login {
+  hl_id          Int       @id @default(autoincrement())
+  hl_usr_id      Int
+  hl_fecha_login DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model menu {
+  mnu_id       Int     @id @default(autoincrement())
+  mnu_menu     String? @db.VarChar(50)
+  mnu_submenu  String? @db.VarChar(50)
+  mnu_dir_form String? @db.VarChar(200)
+  mnu_icon     String? @db.VarChar(50)
+}
+
+model rol {
+  rol_id          Int     @id @default(autoincrement())
+  rol_descripcion String? @db.VarChar(50)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model rol_menu {
+  rm_rol_id         Int
+  rm_mnu_id         Int
+  rm_fecha_alta     DateTime? @db.DateTime(0)
+  rm_fecha_baja     DateTime? @db.DateTime(0)
+  rm_usr_fecha_alta String?   @db.VarChar(50)
+  rm_usr_fecha_baja String?   @db.VarChar(50)
+
+  @@index([rm_rol_id, rm_mnu_id], map: "rm_rol_id_rm_mnu_id")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model temporadas {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model temporalrace {
+  IDM       Int?
+  temporada Int?
+  carrera   Int?
+  jsonstr   String? @db.MediumText
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tracksEnergia {
+  id          Int?
+  nombre      String? @db.VarChar(50)
+  energiabase Float?  @db.Float
+  factor      Float?  @db.Float
+  relativo    Float?  @db.Float
+  nose        Float?  @db.Float
+
+  @@ignore
+}
+
+model tracks_profiles {
+  trackId         Int      @id
+  location        String?  @db.VarChar(100)
+  trackName       String?  @db.VarChar(100)
+  power           Int?
+  handl           Int?
+  accel           Int?
+  raceDistance    Decimal? @db.Decimal(6, 2)
+  laps            Int?
+  lapDistance     Decimal? @db.Decimal(6, 3)
+  avgSpeed        Decimal? @db.Decimal(6, 2)
+  gpsHeld         Int?
+  nbTurns         Int?
+  timeInOutPits   Decimal? @db.Decimal(5, 2)
+  downforce       String?  @db.VarChar(20)
+  overtaking      String?  @db.VarChar(20)
+  suspRigidity    String?  @db.VarChar(20)
+  fuelConsumption String?  @db.VarChar(20)
+  tyreWear        String?  @db.VarChar(20)
+  gripLevel       String?  @db.VarChar(20)
+  category        String?  @db.VarChar(20)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model usuario_backup {
+  usr_id          Int       @default(0)
+  usr_nick        String?   @db.VarChar(50)
+  usr_pass        String?   @db.VarChar(255)
+  usr_nombre      String?   @db.VarChar(50)
+  usr_apellido    String?   @db.VarChar(50)
+  usr_token       String?   @db.VarChar(2000)
+  usr_idm         Int?
+  usr_suporter    Int?
+  usr_fecha_alta  DateTime? @db.DateTime(0)
+  usr_fecha_modif DateTime? @db.DateTime(0)
+  usr_fecha_baja  DateTime? @db.DateTime(0)
+  usr_usr_alta    String?   @db.VarChar(50)
+  usr_usr_modif   String?   @db.VarChar(50)
+  usr_usr_baja    String?   @db.VarChar(50)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model usuario_rol {
+  ur_usr_id          Int
+  ur_rol_id          Int
+  ur_fecha_alta      DateTime? @db.DateTime(0)
+  ur_fecha_baja      DateTime? @db.DateTime(0)
+  ur_fecha_modif     DateTime? @db.DateTime(0)
+  ur_usr_fecha_alta  String?   @db.VarChar(50)
+  ur_usr_fecha_baja  String?   @db.VarChar(50)
+  ur_usr_fecha_modif String?   @db.VarChar(50)
+
+  @@index([ur_usr_id, ur_rol_id], map: "ur_usr_id_ur_rol_id")
+  @@ignore
+}
