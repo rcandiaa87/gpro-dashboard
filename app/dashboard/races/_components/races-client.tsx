@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Flag, Clock, MapPin, ChevronRight, Loader2 } from 'lucide-react';
-import { UserSelector } from '@/components/user-selector';
 import { SeasonSelector } from '@/components/season-selector';
 import { useDashboardStore } from '@/lib/store';
 import { basePath } from '@/lib/api';
@@ -10,7 +9,7 @@ import Link from 'next/link';
 import type { RaceSummary, SeasonRow } from '@/lib/gpro-types';
 
 export function RacesClient() {
-  const { idm, setIdm, season, setSeason } = useDashboardStore();
+  const { idm, season, setSeason } = useDashboardStore();
   const [races, setRaces] = useState<RaceSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
@@ -47,7 +46,6 @@ export function RacesClient() {
           <p className="text-sm text-slate-400 mt-1">Resultados detallados por temporada</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <UserSelector selectedIdm={idm} onIdmChange={setIdm} />
           {idm > 0 && <SeasonSelector selectedSeason={season} onSeasonChange={setSeason} idm={idm} />}
         </div>
       </div>

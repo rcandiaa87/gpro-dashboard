@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Trophy, Flag, Car, User, DollarSign, Target, Activity } from 'lucide-react';
-import { UserSelector } from '@/components/user-selector';
 import { CarPartsRadar } from '@/components/charts/car-parts-radar';
 import { PilotStatsRadar } from '@/components/charts/pilot-stats-radar';
 import { useDashboardStore } from '@/lib/store';
@@ -11,7 +10,7 @@ import { basePath } from '@/lib/api';
 import type { DashboardSummaryResponse } from '@/lib/gpro-types';
 
 export function DashboardClient() {
-  const { idm, setIdm } = useDashboardStore();
+  const idm = useDashboardStore((s) => s.idm);
   const [summary, setSummary] = useState<DashboardSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
@@ -51,11 +50,10 @@ export function DashboardClient() {
         <div>
           <h1 className="text-2xl lg:text-3xl font-display font-bold text-white tracking-tight">Dashboard</h1>
           <p className="text-sm text-slate-400 mt-1">
-            {summary?.user?.name ? `Manager: ${summary.user.name}` : 'Selecciona un manager'}
+            {summary?.user?.name ? `Manager: ${summary.user.name}` : 'Cargando...'}
             {summary?.latestRace?.group ? ` · ${summary.latestRace.group}` : ''}
           </p>
         </div>
-        <UserSelector selectedIdm={idm} onIdmChange={setIdm} />
       </div>
 
       {loading && idm ? (
@@ -64,7 +62,7 @@ export function DashboardClient() {
         </div>
       ) : !idm ? (
         <div className="flex items-center justify-center h-64 text-slate-500">
-          <p>Selecciona un manager para ver sus estadísticas</p>
+          <p>Accedé al dashboard desde el menú principal de la aplicación.</p>
         </div>
       ) : fetchError ? (
         <div className="flex flex-col items-center justify-center h-64 gap-4 text-slate-500">

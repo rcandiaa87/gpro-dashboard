@@ -119,49 +119,56 @@ El dashboard quedará accesible en:
 
 ---
 
-## 6. Integración con el menú PHP
+## 6. Integración con el menú PHP (vía base de datos)
 
-En `inicio.php`, agregar dentro del `<ul class="navbar-nav">`,
-después de `require 'servidor/forms/menu.php';`:
+El sistema de menú está basado en BD. **No modificar `inicio.php` directamente.**
+
+### 6a. Copiar el formulario PHP del dashboard
+
+```bash
+sudo cp dashboard_form.php /var/www/html/gprocalc/servidor/forms/frm_dashboard.php
+```
+
+El archivo `frm_dashboard.php` contiene un iframe que carga el dashboard con el IDM
+del usuario logueado tomado de la sesión PHP:
 
 ```php
-<!-- Opción A: abre en pestaña nueva -->
-<li class="nav-item">
-  <a class="nav-link"
-     href="/gprocalc/dashboard?idm=<?= $_SESSION['usuario_idm'] ?>"
-     target="_blank">
-    <i class="bi-speedometer2" style="font-size:1rem; color:white;"></i>
-    Dashboard &#8599;
-  </a>
-</li>
-
-<!-- Opción B: carga dentro de la app (iframe) -->
-<li class="nav-item">
-  <a class="nav-link" href="#"
-     data-idm="<?= $_SESSION['usuario_idm'] ?>"
-     id="btn_dashboard">
-    <i class="bi-speedometer2" style="font-size:1rem; color:white;"></i>
-    Dashboard
-  </a>
-</li>
+<?php
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+if (!isset($_SESSION['usuario_idm'])) { http_response_code(403); exit; }
+$idm = (int) $_SESSION['usuario_idm'];
+?>
+<iframe
+  src="/gprocalc/dashboard?idm=<?= $idm ?>"
+  style="width:100%;height:calc(100vh - 60px);border:none;"
+  title="GPRO Dashboard">
+</iframe>
 ```
 
-Y antes del cierre `</body>`, agregar el script para la Opción B:
+### 6b. Insertar el ítem de menú en la BD
 
-```html
-<script>
-  $("#btn_dashboard").click(function(e) {
-    e.preventDefault();
-    var idm = $(this).data("idm");
-    var f = document.createElement("iframe");
-    f.src = "/gprocalc/dashboard?idm=" + idm;
-    f.style.cssText = "width:100%;height:calc(100vh - 60px);border:none;";
-    $("#principal").empty().append(f);
-  });
-</script>
+```sql
+-- Categoría padre
+INSERT INTO menu (mnu_menu, mnu_submenu, mnu_dir_form, mnu_icon)
+VALUES ('Dashboard', NULL, NULL, 'speedometer2');
+SET @parent_id = LAST_INSERT_ID();
+
+-- Submenú
+INSERT INTO menu (mnu_menu, mnu_submenu, mnu_dir_form, mnu_icon)
+VALUES ('Dashboard', 'GPRO Dashboard', 'frm_dashboard', NULL);
+SET @submenu_id = LAST_INSERT_ID();
+
+-- Acceso para roles User_Gral (2) y User_Adv (3)
+INSERT INTO rol_menu (rm_rol_id, rm_mnu_id, rm_fecha_alta, rm_usr_fecha_alta)
+VALUES
+  (2, @parent_id,  NOW(), 'sysadmin'),
+  (2, @submenu_id, NOW(), 'sysadmin'),
+  (3, @parent_id,  NOW(), 'sysadmin'),
+  (3, @submenu_id, NOW(), 'sysadmin');
 ```
 
-> Usar solo una de las dos opciones en el menú definitivo.
+> El IDM del usuario logueado se pasa automáticamente vía `$_SESSION['usuario_idm']`.
+> No se requiere selector de manager — el dashboard muestra solo los datos del usuario activo.
 
 ---
 

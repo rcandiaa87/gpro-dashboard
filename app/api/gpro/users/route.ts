@@ -7,7 +7,7 @@ import type { UsuarioRow } from '@/lib/gpro-types';
 export async function GET() {
   try {
     const rows = await queryGpro<UsuarioRow>(
-      'SELECT usr_id, usr_nick, usr_nombre, usr_apellido, usr_idm FROM usuario WHERE usr_idm IS NOT NULL ORDER BY usr_nick'
+      'SELECT usr_id, usr_nick, usr_nombre, usr_apellido, usr_idm FROM usuario WHERE usr_idm IS NOT NULL AND usr_fecha_baja IS NULL AND usr_fecha_deshabilitado IS NULL ORDER BY usr_nick'
     );
     return NextResponse.json(rows ?? []);
   } catch (e: unknown) {

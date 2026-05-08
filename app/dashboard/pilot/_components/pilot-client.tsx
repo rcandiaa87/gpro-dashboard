@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Loader2, TrendingUp } from 'lucide-react';
-import { UserSelector } from '@/components/user-selector';
 import { SeasonSelector } from '@/components/season-selector';
 import { useDashboardStore } from '@/lib/store';
 import { basePath } from '@/lib/api';
@@ -21,7 +20,7 @@ const PilotEvolutionChart = dynamic<PilotEvolutionChartProps>(
 );
 
 export function PilotClient() {
-  const { idm, setIdm, season, setSeason } = useDashboardStore();
+  const { idm, season, setSeason } = useDashboardStore();
   const [data, setData] = useState<PilotEvolutionPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [viewAll, setViewAll] = useState(false);
@@ -78,7 +77,6 @@ export function PilotClient() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <UserSelector selectedIdm={idm} onIdmChange={setIdm} />
           <button onClick={() => setViewAll(!viewAll)}
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${viewAll ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-600'}`}>
             {viewAll ? 'Todas' : 'Por Temp.'}

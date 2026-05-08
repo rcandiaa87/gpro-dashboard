@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Car, Loader2 } from 'lucide-react';
-import { UserSelector } from '@/components/user-selector';
 import { SeasonSelector } from '@/components/season-selector';
 import { useDashboardStore } from '@/lib/store';
 import { basePath } from '@/lib/api';
@@ -38,7 +37,7 @@ const partLabels: Record<string, string> = {
 };
 
 export function VehicleClient() {
-  const { idm, setIdm, season, setSeason } = useDashboardStore();
+  const { idm, season, setSeason } = useDashboardStore();
   const [data, setData] = useState<VehicleRacePoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
@@ -78,7 +77,6 @@ export function VehicleClient() {
           <p className="text-sm text-slate-400 mt-1">Estado y desgaste de los 11 componentes</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <UserSelector selectedIdm={idm} onIdmChange={setIdm} />
           {idm > 0 && <SeasonSelector selectedSeason={season} onSeasonChange={setSeason} idm={idm} />}
         </div>
       </div>
