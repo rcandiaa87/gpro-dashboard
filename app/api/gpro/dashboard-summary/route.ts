@@ -1,43 +1,53 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { queryGpro } from '@/lib/gpro-db';
+import { apiError } from '@/lib/api-error';
+import type {
+  EstadoPilotoRow,
+  EstadoAutoRow,
+  UsuarioRow,
+  RaceAnalysisRow,
+  EstadoStaffRow,
+  RaceJson,
+  DashboardSummaryResponse,
+} from '@/lib/gpro-types';
 
 function decodeHtml(str: string): string {
   if (!str) return str ?? '';
-  return str?.replace?.(/&#(\d+);/g, (_: any, num: any) => String.fromCharCode(Number(num))) ?? str;
+  return str?.replace?.(/&#(\d+);/g, (_: string, num: string) => String.fromCharCode(Number(num))) ?? str;
 }
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const idm = searchParams.get('idm');
-    if (!idm) return NextResponse.json({ error: 'No IDM' }, { status: 400 });
+    if (!idm) return apiError(400, 'IDM requerido');
 
     // Get current pilot state
-    const pilotRows = await queryGpro('SELECT * FROM EstadoPiloto WHERE ep_idm = ?', [Number(idm)]);
+    const pilotRows = await queryGpro<EstadoPilotoRow>('SELECT * FROM EstadoPiloto WHERE ep_idm = ?', [Number(idm)]);
     const pilot = pilotRows?.[0] ?? null;
 
     // Get current car state
-    const carRows = await queryGpro('SELECT * FROM EstadoAuto WHERE ea_idm = ?', [Number(idm)]);
+    const carRows = await queryGpro<EstadoAutoRow>('SELECT * FROM EstadoAuto WHERE ea_idm = ?', [Number(idm)]);
     const car = carRows?.[0] ?? null;
 
     // Get user info
-    const userRows = await queryGpro('SELECT usr_nick, usr_nombre, usr_apellido, usr_suporter FROM usuario WHERE usr_idm = ?', [Number(idm)]);
+    const userRows = await queryGpro<UsuarioRow>('SELECT usr_nick, usr_nombre, usr_apellido, usr_suporter FROM usuario WHERE usr_idm = ?', [Number(idm)]);
     const user = userRows?.[0] ?? null;
 
     // Get latest season info
-    const seasonRows = await queryGpro('SELECT DISTINCT temporada FROM RaceAnalysis WHERE IDM = ? ORDER BY temporada DESC LIMIT 1', [Number(idm)]);
+    const seasonRows = await queryGpro<{ temporada: number }>('SELECT DISTINCT temporada FROM RaceAnalysis WHERE IDM = ? ORDER BY temporada DESC LIMIT 1', [Number(idm)]);
     const latestSeason = seasonRows?.[0]?.temporada ?? 0;
 
     // Get latest race info
-    const latestRaceRows = await queryGpro(
+    const latestRaceRows = await queryGpro<RaceAnalysisRow>(
       'SELECT carrera, jsonstr FROM RaceAnalysis WHERE IDM = ? AND temporada = ? ORDER BY carrera DESC LIMIT 1',
       [Number(idm), latestSeason]
     );
-    let latestRace: any = null;
+    let latestRace: DashboardSummaryResponse['latestRace'] = null;
     if (latestRaceRows?.[0]) {
       try {
-        const json = JSON.parse(latestRaceRows[0]?.jsonstr ?? '{}');
+        const json = JSON.parse(latestRaceRows[0]?.jsonstr ?? '{}') as RaceJson;
         const laps = json?.laps ?? [];
         latestRace = {
           carrera: latestRaceRows[0]?.carrera,
@@ -51,11 +61,11 @@ export async function GET(req: Request) {
     }
 
     // Total races count
-    const countRows = await queryGpro('SELECT COUNT(*) as total FROM RaceAnalysis WHERE IDM = ?', [Number(idm)]);
+    const countRows = await queryGpro<{ total: number }>('SELECT COUNT(*) as total FROM RaceAnalysis WHERE IDM = ?', [Number(idm)]);
     const totalRaces = countRows?.[0]?.total ?? 0;
 
     // Staff state
-    const staffRows = await queryGpro('SELECT * FROM EstadoStaff WHERE es_idm = ?', [Number(idm)]);
+    const staffRows = await queryGpro<EstadoStaffRow>('SELECT * FROM EstadoStaff WHERE es_idm = ?', [Number(idm)]);
     const staff = staffRows?.[0] ?? null;
 
     return NextResponse.json({
@@ -92,8 +102,7 @@ export async function GET(req: Request) {
         concentration: staff?.es_concentracion,
       } : null,
     });
-  } catch (e: any) {
-    console.error('Dashboard summary error:', e?.message);
-    return NextResponse.json({ error: 'Error' }, { status: 500 });
+  } catch (e: unknown) {
+    return apiError(500, 'Error al cargar resumen del dashboard', e);
   }
 }

@@ -16,13 +16,13 @@ export function getGproPool(): mysql.Pool {
   return pool;
 }
 
-export async function queryGpro<T = any>(sql: string, params?: any[]): Promise<T[]> {
+export async function queryGpro<T>(sql: string, params?: unknown[]): Promise<T[]> {
   const p = getGproPool();
   try {
     const [rows] = await p.query(sql, params);
     return rows as T[];
-  } catch (error: any) {
-    console.error('GPRO DB query error:', error?.message);
+  } catch (error: unknown) {
+    console.error('GPRO DB query error:', error instanceof Error ? error.message : error);
     throw error;
   }
 }

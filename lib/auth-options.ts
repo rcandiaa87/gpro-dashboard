@@ -1,11 +1,8 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // Sin adapter — se configura junto con la BD de auth al desplegar en producción
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -13,13 +10,9 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
-        if (!user?.password) return null;
-        const valid = await bcrypt.compare(credentials.password, user.password);
-        if (!valid) return null;
-        return { id: user.id, name: user.name, email: user.email, role: user.role, gproIdm: user.gproIdm };
+      async authorize() {
+        // Auth deshabilitada temporalmente — activar en producción
+        return null;
       },
     }),
   ],

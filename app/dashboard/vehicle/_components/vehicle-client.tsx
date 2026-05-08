@@ -1,17 +1,26 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Car, Loader2 } from 'lucide-react';
 import { UserSelector } from '@/components/user-selector';
 import { SeasonSelector } from '@/components/season-selector';
+import { useDashboardStore } from '@/lib/store';
 import dynamic from 'next/dynamic';
+import type { VehicleRacePoint, SeasonRow } from '@/lib/gpro-types';
 
-const VehicleWearChart: any = dynamic(
-  () => import('@/components/charts/vehicle-wear-chart').then((m: any) => m.VehicleWearChart),
+interface VehicleChartProps {
+  data: VehicleRacePoint[];
+  partColors: Record<string, string>;
+  partLabels: Record<string, string>;
+}
+
+const VehicleWearChart = dynamic<VehicleChartProps>(
+  () => import('@/components/charts/vehicle-wear-chart').then(m => m.VehicleWearChart),
   { ssr: false, loading: () => <div className="h-80 bg-slate-800/50 rounded-lg animate-pulse" /> }
 );
 
-const VehicleLevelChart: any = dynamic(
-  () => import('@/components/charts/vehicle-level-chart').then((m: any) => m.VehicleLevelChart),
+const VehicleLevelChart = dynamic<VehicleChartProps>(
+  () => import('@/components/charts/vehicle-level-chart').then(m => m.VehicleLevelChart),
   { ssr: false, loading: () => <div className="h-80 bg-slate-800/50 rounded-lg animate-pulse" /> }
 );
 
@@ -28,33 +37,35 @@ const partLabels: Record<string, string> = {
 };
 
 export function VehicleClient() {
-  const [idm, setIdm] = useState(0);
-  const [season, setSeason] = useState(0);
-  const [data, setData] = useState<any[]>([]);
+  const { idm, setIdm, season, setSeason } = useDashboardStore();
+  const [data, setData] = useState<VehicleRacePoint[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
-    if (!idm) {
-      fetch('/api/gpro/users').then(r => r.json()).then((d: any) => { if (d?.[0]?.usr_idm) setIdm(d[0].usr_idm); }).catch(() => {});
-    }
-  }, []);
+    if (!idm || season !== 0) return;
+    fetch(`/api/gpro/seasons?idm=${idm}`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((d: SeasonRow[]) => { if (d?.[0]?.temporada) setSeason(d[0].temporada); })
+      .catch(() => { toast.error('No se pudo cargar las temporadas disponibles.'); });
+  }, [idm, season]);
 
-  useEffect(() => {
-    if (!idm) return;
-    fetch(`/api/gpro/seasons?idm=${idm}`).then(r => r.json()).then((d: any) => { if (d?.[0]?.temporada && !season) setSeason(d[0].temporada); }).catch(() => {});
-  }, [idm]);
-
-  useEffect(() => {
+  const loadVehicle = useCallback(() => {
     if (!idm || !season) return;
     setLoading(true);
+    setFetchError(false);
     fetch(`/api/gpro/vehicle?idm=${idm}&season=${season}`)
-      .then(r => r.json())
-      .then((d: any) => setData(Array.isArray(d) ? d : []))
-      .catch(() => setData([]))
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((d: VehicleRacePoint[]) => setData(Array.isArray(d) ? d : []))
+      .catch(() => {
+        toast.error('No se pudo cargar los datos del vehículo. Intenta de nuevo.');
+        setFetchError(true);
+      })
       .finally(() => setLoading(false));
   }, [idm, season]);
 
-  // Latest car state from last race in the season
+  useEffect(() => { loadVehicle(); }, [loadVehicle]);
+
   const latestRace = data?.[data?.length - 1];
   const parts = Object.keys(partLabels);
 
@@ -66,12 +77,11 @@ export function VehicleClient() {
           <p className="text-sm text-slate-400 mt-1">Estado y desgaste de los 11 componentes</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <UserSelector selectedIdm={idm} onIdmChange={(v: number) => { setIdm(v); setSeason(0); }} />
+          <UserSelector selectedIdm={idm} onIdmChange={setIdm} />
           {idm > 0 && <SeasonSelector selectedSeason={season} onSeasonChange={setSeason} idm={idm} />}
         </div>
       </div>
 
-      {/* Current State Summary */}
       {latestRace && (
         <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-5">
           <h3 className="text-sm font-semibold text-slate-400 mb-4">Estado Actual (tras {latestRace?.trackName ?? 'carrera'})</h3>
@@ -101,11 +111,17 @@ export function VehicleClient() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>
+      ) : fetchError ? (
+        <div className="flex flex-col items-center justify-center h-64 gap-4 text-slate-500">
+          <p>No se pudo cargar los datos del vehículo</p>
+          <button onClick={loadVehicle} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm border border-slate-600 transition-all">
+            Reintentar
+          </button>
+        </div>
       ) : data?.length === 0 ? (
         <div className="flex items-center justify-center h-64 text-slate-500"><p>No hay datos de vehículo</p></div>
       ) : (
         <>
-          {/* Wear Evolution */}
           <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-5">
             <h3 className="text-sm font-semibold text-slate-400 mb-4 flex items-center gap-2">
               <Car className="w-4 h-4 text-red-400" /> Desgaste Fin de Carrera por Componente
@@ -115,7 +131,6 @@ export function VehicleClient() {
             </div>
           </div>
 
-          {/* Level Evolution */}
           <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-5">
             <h3 className="text-sm font-semibold text-slate-400 mb-4 flex items-center gap-2">
               <Car className="w-4 h-4 text-blue-400" /> Nivel por Componente

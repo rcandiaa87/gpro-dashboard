@@ -2,10 +2,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut, useSession } from 'next-auth/react';
 import {
-  LayoutDashboard, Trophy, Car, User, Flag, Menu, X, LogOut,
-  ChevronRight, Gauge, TrendingUp, Settings
+  LayoutDashboard, Trophy, Car, User, Flag, Menu, X,
+  ChevronRight, Gauge
 } from 'lucide-react';
 
 const navItems = [
@@ -20,7 +19,6 @@ const navItems = [
 export function Sidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname() ?? '';
-  const { data: session } = useSession() || {};
 
   return (
     <>
@@ -66,19 +64,15 @@ export function Sidebar() {
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50">
-          <div className="flex items-center gap-3 mb-3 px-2">
+          <div className="flex items-center gap-3 px-2">
             <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">
-              {session?.user?.name?.[0]?.toUpperCase() ?? 'U'}
+              B
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-white truncate">{session?.user?.name ?? 'Usuario'}</p>
-              <p className="text-xs text-slate-500 truncate">{session?.user?.email ?? ''}</p>
+              <p className="text-sm text-white truncate">Blue Dragons</p>
+              <p className="text-xs text-slate-500 truncate">GPRO Racing</p>
             </div>
           </div>
-          <button onClick={() => signOut({ callbackUrl: '/login' })}
-            className="flex items-center gap-2 px-4 py-2 w-full text-sm text-slate-400 hover:text-red-400 hover:bg-slate-800/50 rounded-lg transition-colors">
-            <LogOut className="w-4 h-4" /> Cerrar Sesión
-          </button>
         </div>
       </aside>
     </>

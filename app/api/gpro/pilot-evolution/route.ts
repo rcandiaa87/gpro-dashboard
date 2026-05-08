@@ -1,6 +1,8 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { queryGpro } from '@/lib/gpro-db';
+import { apiError } from '@/lib/api-error';
+import type { DriProfileRow, DriProfileJson } from '@/lib/gpro-types';
 
 export async function GET(req: Request) {
   try {
@@ -10,22 +12,22 @@ export async function GET(req: Request) {
     if (!idm) return NextResponse.json([]);
 
     let sql = 'SELECT temporada, carrera, jsonstr FROM DriProfile WHERE IDM = ?';
-    const params: any[] = [Number(idm)];
+    const params: unknown[] = [Number(idm)];
     if (season) {
       sql += ' AND temporada = ?';
       params.push(Number(season));
     }
     sql += ' ORDER BY temporada ASC, carrera ASC';
 
-    const rows = await queryGpro(sql, params);
+    const rows = await queryGpro<DriProfileRow>(sql, params);
 
-    const data = (rows ?? [])?.map?.((row: any) => {
+    const data = (rows ?? []).map((row: DriProfileRow) => {
       try {
-        const json = JSON.parse(row?.jsonstr ?? '{}');
+        const json = JSON.parse(row.jsonstr ?? '{}') as DriProfileJson;
         return {
-          temporada: row?.temporada,
-          carrera: row?.carrera,
-          label: `S${row?.temporada}R${row?.carrera}`,
+          temporada: row.temporada,
+          carrera: row.carrera,
+          label: `S${row.temporada}R${row.carrera}`,
           overall: Number(json?.overall ?? 0),
           concentration: Number(json?.concentration ?? 0),
           talent: Number(json?.talent ?? 0),
@@ -43,11 +45,10 @@ export async function GET(req: Request) {
       } catch {
         return null;
       }
-    })?.filter?.(Boolean) ?? [];
+    }).filter(Boolean);
 
     return NextResponse.json(data);
-  } catch (e: any) {
-    console.error('Pilot evolution error:', e?.message);
-    return NextResponse.json([], { status: 500 });
+  } catch (e: unknown) {
+    return apiError(500, 'Error al cargar evolución del piloto', e);
   }
 }

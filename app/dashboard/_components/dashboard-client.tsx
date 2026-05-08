@@ -1,30 +1,40 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { Trophy, Flag, Car, User, Gauge, Zap, TrendingUp, DollarSign, Target, Activity } from 'lucide-react';
-import { SeasonSelector } from '@/components/season-selector';
+import type { LucideIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import { Trophy, Flag, Car, User, DollarSign, Target, Activity } from 'lucide-react';
 import { UserSelector } from '@/components/user-selector';
 import { CarPartsRadar } from '@/components/charts/car-parts-radar';
 import { PilotStatsRadar } from '@/components/charts/pilot-stats-radar';
+import { useDashboardStore } from '@/lib/store';
+import type { DashboardSummaryResponse } from '@/lib/gpro-types';
 
 export function DashboardClient() {
-  const [idm, setIdm] = useState<number>(0);
-  const [summary, setSummary] = useState<any>(null);
+  const { idm, setIdm } = useDashboardStore();
+  const [summary, setSummary] = useState<DashboardSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
-  useEffect(() => {
+  const loadSummary = useCallback(() => {
     if (!idm) return;
     setLoading(true);
+    setFetchError(false);
     fetch(`/api/gpro/dashboard-summary?idm=${idm}`)
-      .then((r) => r.json())
-      .then((d: any) => setSummary(d))
-      .catch(() => setSummary(null))
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((d: DashboardSummaryResponse) => setSummary(d))
+      .catch(() => {
+        toast.error('No se pudo cargar el resumen del dashboard. Intenta de nuevo.');
+        setFetchError(true);
+      })
       .finally(() => setLoading(false));
   }, [idm]);
 
+  useEffect(() => { loadSummary(); }, [loadSummary]);
+
   const pilot = summary?.pilot;
   const car = summary?.car;
-  const carParts = car ? Object.entries(car ?? {})?.map(([key, val]: any) => ({
-    name: key, lvl: val?.lvl ?? 0, wear: val?.wear ?? 0,
+  const carParts = car ? Object.entries(car).map(([key, val]) => ({
+    name: key, lvl: val.lvl ?? 0, wear: val.wear ?? 0,
   })) : [];
 
   const partLabels: Record<string, string> = {
@@ -54,6 +64,13 @@ export function DashboardClient() {
       ) : !idm ? (
         <div className="flex items-center justify-center h-64 text-slate-500">
           <p>Selecciona un manager para ver sus estadísticas</p>
+        </div>
+      ) : fetchError ? (
+        <div className="flex flex-col items-center justify-center h-64 gap-4 text-slate-500">
+          <p>No se pudo cargar el resumen del dashboard</p>
+          <button onClick={loadSummary} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm border border-slate-600 transition-all">
+            Reintentar
+          </button>
         </div>
       ) : (
         <>
@@ -107,16 +124,16 @@ export function DashboardClient() {
                     { label: 'Con. Técnico', value: pilot?.techInsight, max: 300, color: 'bg-cyan-500' },
                     { label: 'Carisma', value: pilot?.charisma, max: 300, color: 'bg-pink-500' },
                     { label: 'Motivación', value: pilot?.motivation, max: 300, color: 'bg-orange-500' },
-                  ]?.map?.((s: any) => (
-                    <div key={s?.label} className="flex items-center gap-3">
-                      <span className="text-xs text-slate-400 w-24 shrink-0">{s?.label}</span>
+                  ].map((s) => (
+                    <div key={s.label} className="flex items-center gap-3">
+                      <span className="text-xs text-slate-400 w-24 shrink-0">{s.label}</span>
                       <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
-                        <div className={`h-full ${s?.color} rounded-full transition-all`}
-                          style={{ width: `${Math.min(((s?.value ?? 0) / (s?.max ?? 1)) * 100, 100)}%` }} />
+                        <div className={`h-full ${s.color} rounded-full transition-all`}
+                          style={{ width: `${Math.min(((s.value ?? 0) / (s.max ?? 1)) * 100, 100)}%` }} />
                       </div>
-                      <span className="text-xs font-mono text-white w-8 text-right">{s?.value ?? 0}</span>
+                      <span className="text-xs font-mono text-white w-8 text-right">{s.value ?? 0}</span>
                     </div>
-                  )) ?? []}
+                  ))}
                   <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-700/50">
                     <span className="text-xs text-slate-500">Peso: {pilot?.weight ?? '-'}kg</span>
                   </div>
@@ -131,21 +148,21 @@ export function DashboardClient() {
               </h3>
               {car ? (
                 <div className="space-y-3">
-                  {carParts?.map?.((part: any) => (
-                    <div key={part?.name} className="flex items-center gap-3">
-                      <span className="text-xs text-slate-400 w-20 shrink-0">{partLabels?.[part?.name] ?? part?.name}</span>
-                      <span className="text-xs font-mono text-blue-400 w-8">Lv{part?.lvl ?? 0}</span>
+                  {carParts.map((part) => (
+                    <div key={part.name} className="flex items-center gap-3">
+                      <span className="text-xs text-slate-400 w-20 shrink-0">{partLabels[part.name] ?? part.name}</span>
+                      <span className="text-xs font-mono text-blue-400 w-8">Lv{part.lvl ?? 0}</span>
                       <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full transition-all ${
-                          (part?.wear ?? 0) > 80 ? 'bg-red-500' : (part?.wear ?? 0) > 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                          (part.wear ?? 0) > 80 ? 'bg-red-500' : (part.wear ?? 0) > 50 ? 'bg-amber-500' : 'bg-emerald-500'
                         }`}
-                          style={{ width: `${part?.wear ?? 0}%` }} />
+                          style={{ width: `${part.wear ?? 0}%` }} />
                       </div>
                       <span className={`text-xs font-mono w-10 text-right ${
-                        (part?.wear ?? 0) > 80 ? 'text-red-400' : (part?.wear ?? 0) > 50 ? 'text-amber-400' : 'text-emerald-400'
-                      }`}>{part?.wear ?? 0}%</span>
+                        (part.wear ?? 0) > 80 ? 'text-red-400' : (part.wear ?? 0) > 50 ? 'text-amber-400' : 'text-emerald-400'
+                      }`}>{part.wear ?? 0}%</span>
                     </div>
-                  )) ?? []}
+                  ))}
                 </div>
               ) : <p className="text-slate-500 text-sm">Sin datos de vehículo</p>}
             </div>
@@ -175,7 +192,7 @@ export function DashboardClient() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: any; color: string }) {
+function StatCard({ icon: Icon, label, value, color }: { icon: LucideIcon; label: string; value: string | number; color: string }) {
   const colorMap: Record<string, string> = {
     blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
@@ -193,7 +210,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
   );
 }
 
-function formatMoney(val: any): string {
+function formatMoney(val: unknown): string {
   if (val == null) return '-';
   const num = Number(val);
   if (isNaN(num)) return '-';

@@ -1,31 +1,49 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, Flag, Clock, Thermometer, Droplets, Wrench, DollarSign, Zap, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Flag, Clock, Thermometer, Droplets, Wrench, DollarSign, ChevronUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import type { RaceDetailResponse, LapResponse, PitResponse } from '@/lib/gpro-types';
 
-const LapTimeChart: any = dynamic(() => import('@/components/charts/lap-time-chart').then((m: any) => m.LapTimeChart), { ssr: false, loading: () => <div className="h-64 bg-slate-800/50 rounded-lg animate-pulse" /> });
-const LapPositionChart: any = dynamic(() => import('@/components/charts/lap-position-chart').then((m: any) => m.LapPositionChart), { ssr: false, loading: () => <div className="h-64 bg-slate-800/50 rounded-lg animate-pulse" /> });
+interface LapTimeChartProps { laps: LapResponse[]; pits: PitResponse[]; }
+interface LapPositionChartProps { laps: LapResponse[]; }
+
+const LapTimeChart = dynamic<LapTimeChartProps>(() => import('@/components/charts/lap-time-chart').then(m => m.LapTimeChart), { ssr: false, loading: () => <div className="h-64 bg-slate-800/50 rounded-lg animate-pulse" /> });
+const LapPositionChart = dynamic<LapPositionChartProps>(() => import('@/components/charts/lap-position-chart').then(m => m.LapPositionChart), { ssr: false, loading: () => <div className="h-64 bg-slate-800/50 rounded-lg animate-pulse" /> });
 
 interface Props { season: string; race: string; }
 
 export function RaceDetailClient({ season, race }: Props) {
   const searchParams = useSearchParams();
   const idm = searchParams?.get('idm') ?? '0';
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<RaceDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [activeTab, setActiveTab] = useState('telemetry');
 
-  useEffect(() => {
+  const loadRace = useCallback(() => {
     if (!idm || idm === '0') return;
     setLoading(true);
+    setFetchError(false);
     fetch(`/api/gpro/race-detail?idm=${idm}&season=${season}&race=${race}`)
-      .then(r => r.json())
-      .then(d => setData(d))
-      .catch(() => setData(null))
+      .then(r => {
+        if (!r.ok) {
+          if (r.status === 404) return null;
+          throw new Error(`HTTP ${r.status}`);
+        }
+        return r.json();
+      })
+      .then((d: RaceDetailResponse | null) => setData(d))
+      .catch(() => {
+        toast.error('No se pudo cargar los datos de la carrera. Intenta de nuevo.');
+        setFetchError(true);
+      })
       .finally(() => setLoading(false));
   }, [idm, season, race]);
+
+  useEffect(() => { loadRace(); }, [loadRace]);
 
   if (loading) return (
     <div className="p-6 flex items-center justify-center h-64">
@@ -33,7 +51,17 @@ export function RaceDetailClient({ season, race }: Props) {
     </div>
   );
 
-  if (!data || data?.error) return (
+  if (fetchError) return (
+    <div className="p-6 flex flex-col items-center justify-center h-64 gap-4 text-slate-500">
+      <p>No se pudo cargar los datos de la carrera</p>
+      <button onClick={loadRace} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm border border-slate-600 transition-all">
+        Reintentar
+      </button>
+      <Link href="/dashboard/races" className="text-blue-400 hover:text-blue-300 text-sm">← Volver a carreras</Link>
+    </div>
+  );
+
+  if (!data) return (
     <div className="p-6 text-center text-slate-500">
       <p>No se encontraron datos para esta carrera</p>
       <Link href="/dashboard/races" className="text-blue-400 hover:text-blue-300 mt-2 inline-block">← Volver</Link>
@@ -103,7 +131,7 @@ export function RaceDetailClient({ season, race }: Props) {
             { k: 'CHA', v: data?.driver?.cha, c: data?.driverChanges?.cha },
             { k: 'MOT', v: data?.driver?.mot, c: data?.driverChanges?.mot },
             { k: 'REP', v: data?.driver?.rep, c: data?.driverChanges?.rep },
-          ]?.map?.((s: any) => {
+          ].map((s) => {
             const change = Number(s?.c ?? 0);
             return (
               <div key={s?.k} className="bg-slate-800/50 rounded-lg p-2 text-center">
@@ -123,10 +151,10 @@ export function RaceDetailClient({ season, race }: Props) {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-900/50 rounded-lg p-1 overflow-x-auto">
-        {tabs?.map?.((tab: any) => (
-          <button key={tab?.id} onClick={() => setActiveTab(tab?.id ?? 'telemetry')}
+        {tabs.map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
-              activeTab === tab?.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}>{tab?.label}</button>
         )) ?? []}
       </div>
@@ -197,7 +225,7 @@ export function RaceDetailClient({ season, race }: Props) {
                     </tr>
                   </thead>
                   <tbody>
-                    {data?.pits?.map?.((pit: any, i: number) => (
+                    {data?.pits?.map?.((pit: PitResponse, i: number) => (
                       <tr key={i} className="border-t border-slate-700/30 text-slate-300">
                         <td className="py-2 px-3">{pit?.idx ?? i + 1}</td>
                         <td className="py-2 px-3 font-mono">{pit?.lap ?? '-'}</td>
@@ -234,7 +262,7 @@ export function RaceDetailClient({ season, race }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {data?.setupsUsed?.map?.((s: any, i: number) => (
+                {data?.setupsUsed?.map?.((s: Record<string, string | number | null>, i: number) => (
                   <tr key={i} className="border-t border-slate-700/30 text-slate-300">
                     <td className="py-2 px-3 font-semibold text-white">{s?.session ?? '-'}</td>
                     <td className="py-2 px-3 text-right font-mono">{s?.setFWing ?? '-'}</td>
@@ -288,7 +316,7 @@ export function RaceDetailClient({ season, race }: Props) {
             </div>
           </div>
           <div className="space-y-3">
-            {Object.entries(data?.carParts ?? {})?.map?.(([key, val]: any) => (
+            {Object.entries(data?.carParts ?? {}).map(([key, val]) => (
               <div key={key} className="flex items-center gap-3">
                 <span className="text-xs text-slate-400 w-24 shrink-0">{partLabels?.[key] ?? key}</span>
                 <span className="text-xs font-mono text-blue-400 w-8">Lv{val?.lvl ?? 0}</span>
@@ -311,7 +339,7 @@ export function RaceDetailClient({ season, race }: Props) {
             <DollarSign className="w-4 h-4 text-emerald-400" /> Transacciones
           </h3>
           <div className="space-y-2">
-            {data?.transactions?.map?.((t: any, i: number) => (
+            {data?.transactions?.map?.((t: { desc: string; amount: number }, i: number) => (
               <div key={i} className="flex items-center justify-between py-2 border-b border-slate-700/30">
                 <span className="text-sm text-slate-300">{t?.desc ?? '-'}</span>
                 <span className={`font-mono text-sm ${(t?.amount ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -330,7 +358,7 @@ export function RaceDetailClient({ season, race }: Props) {
   );
 }
 
-function QuickStat({ label, value, sub }: { label: string; value: any; sub?: string }) {
+function QuickStat({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="bg-slate-900/80 border border-slate-700/50 rounded-lg p-3 text-center">
       <p className="text-xs text-slate-500">{label}</p>
@@ -340,7 +368,7 @@ function QuickStat({ label, value, sub }: { label: string; value: any; sub?: str
   );
 }
 
-function getPositionColor(pos: any): string {
+function getPositionColor(pos: number | null | undefined): string {
   const p = Number(pos);
   if (p === 1) return 'text-amber-400';
   if (p <= 3) return 'text-emerald-400';
@@ -348,16 +376,16 @@ function getPositionColor(pos: any): string {
   return 'text-slate-300';
 }
 
-function formatNum(val: any): string {
+function formatNum(val: unknown): string {
   const num = Number(val ?? 0);
   if (isNaN(num)) return '0';
   return num?.toLocaleString?.('es-AR') ?? '0';
 }
 
-function formatRange(val: any): string {  
-  if (!val) return '-';  
-  if (typeof val === 'object' && val.from !== undefined && val.to !== undefined) {  
-    return `${val.from} → ${val.to}`;  
-  }  
-  return String(val);  
+function formatRange(val: unknown): string {
+  if (!val) return '-';
+  if (typeof val === 'object' && val !== null && 'from' in val && 'to' in val) {
+    return `${(val as { from: unknown; to: unknown }).from} → ${(val as { from: unknown; to: unknown }).to}`;
+  }
+  return String(val);
 }
