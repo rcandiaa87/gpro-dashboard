@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
+import { basePath } from '@/lib/api';
 
 interface UserSelectorProps {
   selectedIdm: number;
@@ -11,7 +12,7 @@ export function UserSelector({ selectedIdm, onIdmChange }: UserSelectorProps) {
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/gpro/users')
+    fetch(`${basePath}/api/gpro/users`)
       .then((r) => r.json())
       .then((data: any) => {
         const u = Array.isArray(data) ? data : [];

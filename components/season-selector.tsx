@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Calendar } from 'lucide-react';
+import { basePath } from '@/lib/api';
 
 interface SeasonSelectorProps {
   selectedSeason: number;
@@ -13,7 +14,7 @@ export function SeasonSelector({ selectedSeason, onSeasonChange, idm }: SeasonSe
 
   useEffect(() => {
     if (!idm) return;
-    fetch(`/api/gpro/seasons?idm=${idm}`)
+    fetch(`${basePath}/api/gpro/seasons?idm=${idm}`)
       .then((r) => r.json())
       .then((data: any) => {
         const s = (data ?? [])?.map?.((r: any) => r?.temporada) ?? [];
