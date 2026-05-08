@@ -7,6 +7,7 @@ import { UserSelector } from '@/components/user-selector';
 import { CarPartsRadar } from '@/components/charts/car-parts-radar';
 import { PilotStatsRadar } from '@/components/charts/pilot-stats-radar';
 import { useDashboardStore } from '@/lib/store';
+import { basePath } from '@/lib/api';
 import type { DashboardSummaryResponse } from '@/lib/gpro-types';
 
 export function DashboardClient() {
@@ -19,7 +20,7 @@ export function DashboardClient() {
     if (!idm) return;
     setLoading(true);
     setFetchError(false);
-    fetch(`/api/gpro/dashboard-summary?idm=${idm}`)
+    fetch(`${basePath}/api/gpro/dashboard-summary?idm=${idm}`)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: DashboardSummaryResponse) => setSummary(d))
       .catch(() => {

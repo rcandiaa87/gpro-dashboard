@@ -5,6 +5,7 @@ import { Car, Loader2 } from 'lucide-react';
 import { UserSelector } from '@/components/user-selector';
 import { SeasonSelector } from '@/components/season-selector';
 import { useDashboardStore } from '@/lib/store';
+import { basePath } from '@/lib/api';
 import dynamic from 'next/dynamic';
 import type { VehicleRacePoint, SeasonRow } from '@/lib/gpro-types';
 
@@ -44,7 +45,7 @@ export function VehicleClient() {
 
   useEffect(() => {
     if (!idm || season !== 0) return;
-    fetch(`/api/gpro/seasons?idm=${idm}`)
+    fetch(`${basePath}/api/gpro/seasons?idm=${idm}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: SeasonRow[]) => { if (d?.[0]?.temporada) setSeason(d[0].temporada); })
       .catch(() => { toast.error('No se pudo cargar las temporadas disponibles.'); });
@@ -54,7 +55,7 @@ export function VehicleClient() {
     if (!idm || !season) return;
     setLoading(true);
     setFetchError(false);
-    fetch(`/api/gpro/vehicle?idm=${idm}&season=${season}`)
+    fetch(`${basePath}/api/gpro/vehicle?idm=${idm}&season=${season}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: VehicleRacePoint[]) => setData(Array.isArray(d) ? d : []))
       .catch(() => {

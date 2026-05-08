@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useDashboardStore } from '@/lib/store';
+import { basePath } from '@/lib/api';
 import { Gauge, Loader2, Zap, RotateCcw, Search, X, Flag } from 'lucide-react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -28,7 +29,7 @@ export function TracksClient() {
   const [perfLoading, setPerfLoading] = useState(false);
 
   useEffect(() => {
-    fetch('/api/gpro/tracks')
+    fetch(`${basePath}/api/gpro/tracks`)
       .then(r => r.json())
       .then((d: TrackRow[]) => setTracks(Array.isArray(d) ? d : []))
       .catch(() => setTracks([]))
@@ -37,7 +38,7 @@ export function TracksClient() {
 
   useEffect(() => {
     if (!idm) return;
-    fetch(`/api/gpro/track-race-counts?idm=${idm}`)
+    fetch(`${basePath}/api/gpro/track-race-counts?idm=${idm}`)
       .then(r => r.json())
       .then((d: Record<number, number>) => setRaceCounts(d ?? {}))
       .catch(() => setRaceCounts({}));
@@ -47,7 +48,7 @@ export function TracksClient() {
     if (!selectedTrackId || !idm) return;
     setPerfLoading(true);
     setPerformance(null);
-    fetch(`/api/gpro/track-performance?idm=${idm}&trackId=${selectedTrackId}`)
+    fetch(`${basePath}/api/gpro/track-performance?idm=${idm}&trackId=${selectedTrackId}`)
       .then(r => r.json())
       .then((d: TrackPerformanceResponse) => setPerformance(d))
       .catch(() => setPerformance(null))

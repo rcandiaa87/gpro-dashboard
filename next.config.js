@@ -3,6 +3,9 @@ const path = require('path');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   basePath: '/gprocalc/dashboard',
+  env: {
+    NEXT_PUBLIC_BASE_PATH: '/gprocalc/dashboard',
+  },
   distDir: process.env.NEXT_DIST_DIR || '.next',
   output: process.env.NEXT_OUTPUT_MODE,
   productionBrowserSourceMaps: false,

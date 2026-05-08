@@ -6,6 +6,7 @@ import { ArrowLeft, Flag, Clock, Thermometer, Droplets, Wrench, DollarSign, Chev
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { RaceDetailResponse, LapResponse, PitResponse } from '@/lib/gpro-types';
+import { basePath } from '@/lib/api';
 
 interface LapTimeChartProps { laps: LapResponse[]; pits: PitResponse[]; }
 interface LapPositionChartProps { laps: LapResponse[]; }
@@ -27,7 +28,7 @@ export function RaceDetailClient({ season, race }: Props) {
     if (!idm || idm === '0') return;
     setLoading(true);
     setFetchError(false);
-    fetch(`/api/gpro/race-detail?idm=${idm}&season=${season}&race=${race}`)
+    fetch(`${basePath}/api/gpro/race-detail?idm=${idm}&season=${season}&race=${race}`)
       .then(r => {
         if (!r.ok) {
           if (r.status === 404) return null;

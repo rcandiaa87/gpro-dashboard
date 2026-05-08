@@ -5,6 +5,7 @@ import { Loader2, TrendingUp } from 'lucide-react';
 import { UserSelector } from '@/components/user-selector';
 import { SeasonSelector } from '@/components/season-selector';
 import { useDashboardStore } from '@/lib/store';
+import { basePath } from '@/lib/api';
 import dynamic from 'next/dynamic';
 import type { PilotEvolutionPoint, SeasonRow } from '@/lib/gpro-types';
 
@@ -28,7 +29,7 @@ export function PilotClient() {
 
   useEffect(() => {
     if (!idm || season !== 0 || viewAll) return;
-    fetch(`/api/gpro/seasons?idm=${idm}`)
+    fetch(`${basePath}/api/gpro/seasons?idm=${idm}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: SeasonRow[]) => { if (d?.[0]?.temporada) setSeason(d[0].temporada); })
       .catch(() => { toast.error('No se pudo cargar las temporadas disponibles.'); });
@@ -39,7 +40,7 @@ export function PilotClient() {
     if (!viewAll && !season) return;
     setLoading(true);
     setFetchError(false);
-    const url = viewAll ? `/api/gpro/pilot-evolution?idm=${idm}` : `/api/gpro/pilot-evolution?idm=${idm}&season=${season}`;
+    const url = viewAll ? `${basePath}/api/gpro/pilot-evolution?idm=${idm}` : `${basePath}/api/gpro/pilot-evolution?idm=${idm}&season=${season}`;
     fetch(url)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: PilotEvolutionPoint[]) => setData(Array.isArray(d) ? d : []))

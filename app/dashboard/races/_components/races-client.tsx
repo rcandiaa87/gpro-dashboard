@@ -5,6 +5,7 @@ import { Flag, Clock, MapPin, ChevronRight, Loader2 } from 'lucide-react';
 import { UserSelector } from '@/components/user-selector';
 import { SeasonSelector } from '@/components/season-selector';
 import { useDashboardStore } from '@/lib/store';
+import { basePath } from '@/lib/api';
 import Link from 'next/link';
 import type { RaceSummary, SeasonRow } from '@/lib/gpro-types';
 
@@ -16,7 +17,7 @@ export function RacesClient() {
 
   useEffect(() => {
     if (!idm || season !== 0) return;
-    fetch(`/api/gpro/seasons?idm=${idm}`)
+    fetch(`${basePath}/api/gpro/seasons?idm=${idm}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: SeasonRow[]) => { if (d?.[0]?.temporada) setSeason(d[0].temporada); })
       .catch(() => { toast.error('No se pudo cargar las temporadas disponibles.'); });
@@ -26,7 +27,7 @@ export function RacesClient() {
     if (!idm || !season) return;
     setLoading(true);
     setFetchError(false);
-    fetch(`/api/gpro/races?idm=${idm}&season=${season}`)
+    fetch(`${basePath}/api/gpro/races?idm=${idm}&season=${season}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: RaceSummary[]) => setRaces(Array.isArray(d) ? d : []))
       .catch(() => {
