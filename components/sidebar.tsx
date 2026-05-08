@@ -37,7 +37,7 @@ export function Sidebar() {
             </div>
             <div>
               <h2 className="text-sm font-display font-bold text-white">GPRO</h2>
-              <p className="text-xs text-blue-400">Blue Dragons</p>
+              <p className="text-xs text-blue-400">Dragons</p>
             </div>
           </div>
           <button onClick={() => setOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
@@ -66,10 +66,10 @@ export function Sidebar() {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50">
           <div className="flex items-center gap-3 px-2">
             <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">
-              B
+              D
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-white truncate">Blue Dragons</p>
+              <p className="text-sm text-white truncate">Dragons</p>
               <p className="text-xs text-slate-500 truncate">GPRO Racing</p>
             </div>
           </div>
