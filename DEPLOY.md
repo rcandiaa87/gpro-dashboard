@@ -129,8 +129,7 @@ El sistema de menú está basado en BD. **No modificar `inicio.php` directamente
 sudo cp dashboard_form.php /var/www/html/gprocalc/servidor/forms/frm_dashboard.php
 ```
 
-El archivo `frm_dashboard.php` contiene un iframe que carga el dashboard con el IDM
-del usuario logueado tomado de la sesión PHP:
+El archivo `frm_dashboard.php` contiene un iframe que carga el dashboard:
 
 ```php
 <?php
@@ -144,6 +143,12 @@ $idm = (int) $_SESSION['usuario_idm'];
   title="GPRO Dashboard">
 </iframe>
 ```
+
+**Cómo resuelve el IDM el dashboard (orden de prioridad):**
+
+1. `window.parent.sesion[0].idm` — variable JS de sesión de la app PHP padre (fuente principal, mismo dominio)
+2. Parámetro `?idm=` en la URL — fallback provisto por el iframe src
+3. Si ninguno está disponible — muestra mensaje de error al usuario
 
 ### 6b. Insertar el ítem de menú en la BD
 
@@ -167,8 +172,8 @@ VALUES
   (3, @submenu_id, NOW(), 'sysadmin');
 ```
 
-> El IDM del usuario logueado se pasa automáticamente vía `$_SESSION['usuario_idm']`.
 > No se requiere selector de manager — el dashboard muestra solo los datos del usuario activo.
+> El IDM se lee de la variable JS `sesion` de la app padre; el `?idm=` en la URL actúa como fallback.
 
 ---
 
@@ -194,6 +199,8 @@ pm2 restart gpro-dashboard
 - Verificar credenciales en `.env.production.local`
 - Probar conexión: `mysql -u USUARIO -pCLAVE NOMBRE_BD -e "SHOW TABLES;"`
 
-**El menú PHP no muestra datos del usuario**
-- Verificar que `$_SESSION['usuario_idm']` existe en la sesión PHP
-- Revisar el archivo `servidor/login/logear.php`
+**El dashboard no muestra datos (pantalla en blanco o error de usuario)**
+- Abrir DevTools (F12) → Consola y ejecutar: `console.log(sesion[0].idm)`
+- Debe retornar el IDM numérico del usuario logueado (ej: `1106074`)
+- Si retorna `undefined`, la variable `sesion` no está disponible en la página padre
+- Verificar que `$_SESSION['usuario_idm']` existe: revisar `servidor/login/logear.php`
