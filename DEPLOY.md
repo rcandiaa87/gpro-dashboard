@@ -123,11 +123,15 @@ El dashboard quedará accesible en:
 
 El sistema de menú está basado en BD. **No modificar `inicio.php` directamente.**
 
-### 6a. Copiar el formulario PHP del dashboard
+### 6a. Copiar los archivos PHP al servidor
 
 ```bash
 sudo cp dashboard_form.php /var/www/html/gprocalc/servidor/forms/frm_dashboard.php
+sudo cp validate_session.php /var/www/html/gprocalc/servidor/validate_session.php
 ```
+
+`validate_session.php` es el endpoint que Next.js consulta en cada request para
+verificar que el usuario tiene sesión PHP activa. Si no la tiene, redirige a `inicio.php`.
 
 El archivo `frm_dashboard.php` contiene un iframe que carga el dashboard:
 
@@ -198,6 +202,11 @@ pm2 restart gpro-dashboard
 **Error de base de datos**
 - Verificar credenciales en `.env.production.local`
 - Probar conexión: `mysql -u USUARIO -pCLAVE NOMBRE_BD -e "SHOW TABLES;"`
+
+**El dashboard redirige a inicio.php aunque estoy logueado**
+- Verificar que el endpoint de validación responde: `curl -b "PHPSESSID=TU_SESSION_ID" http://localhost/gprocalc/servidor/validate_session.php`
+- Debe retornar `{"valid":true}` con status 200
+- Si retorna 401, la sesión PHP no está activa o el archivo no fue copiado
 
 **El dashboard no muestra datos (pantalla en blanco o error de usuario)**
 - Abrir DevTools (F12) → Consola y ejecutar: `console.log(sesion[0].idm)`
