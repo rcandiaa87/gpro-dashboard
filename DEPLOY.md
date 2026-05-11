@@ -100,14 +100,20 @@ sudo a2enmod proxy proxy_http
 sudo systemctl restart apache2
 ```
 
-Agregar estas dos líneas dentro del bloque `<VirtualHost>` en
+Agregar el siguiente bloque dentro de `<VirtualHost>` en
 `/etc/apache2/sites-enabled/000-default.conf` (o el archivo correspondiente),
 **antes** del cierre `</VirtualHost>`:
 
 ```apache
-ProxyPass /gprocalc/dashboard http://localhost:3000/gprocalc/dashboard
-ProxyPassReverse /gprocalc/dashboard http://localhost:3000/gprocalc/dashboard
+<Location /gprocalc/dashboard>
+    ProxyPass http://localhost:3000/gprocalc/dashboard
+    ProxyPassReverse http://localhost:3000/gprocalc/dashboard
+</Location>
 ```
+
+> **Importante:** usar `<Location>` y no `ProxyPass` suelto. Como `/gprocalc` es un
+> directorio físico en el servidor, Apache lo sirve desde el filesystem antes de aplicar
+> el proxy, causando un 403. El bloque `<Location>` tiene prioridad sobre el filesystem.
 
 Reiniciar Apache:
 ```bash
