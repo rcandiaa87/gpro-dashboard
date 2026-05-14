@@ -25,9 +25,17 @@ const VehicleLevelChart = dynamic<VehicleChartProps>(
 );
 
 const partColors: Record<string, string> = {
-  chassis: '#60B5FF', engine: '#FF6363', FWing: '#80D8C3', RWing: '#FF9149',
-  underbody: '#A19AD3', sidepods: '#FF90BB', cooling: '#72BF78',
-  gear: '#f59e0b', brakes: '#FF9898', susp: '#06b6d4', electronics: '#a855f7',
+  chassis: 'hsl(var(--chart-1))',
+  engine: 'hsl(var(--chart-7))',
+  FWing: 'hsl(var(--chart-2))',
+  RWing: 'hsl(var(--chart-9))',
+  underbody: 'hsl(var(--chart-10))',
+  sidepods: 'hsl(var(--chart-11))',
+  cooling: 'hsl(var(--chart-8))',
+  gear: 'hsl(var(--chart-3))',
+  brakes: 'hsl(var(--chart-5))',
+  susp: 'hsl(var(--chart-6))',
+  electronics: 'hsl(var(--chart-4))',
 };
 
 const partLabels: Record<string, string> = {
@@ -44,27 +52,35 @@ export function VehicleClient() {
 
   useEffect(() => {
     if (!idm || season !== 0) return;
-    fetch(`${basePath}/api/gpro/seasons?idm=${idm}`)
+    const controller = new AbortController();
+    fetch(`${basePath}/api/gpro/seasons?idm=${idm}`, { signal: controller.signal })
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: SeasonRow[]) => { if (d?.[0]?.temporada) setSeason(d[0].temporada); })
-      .catch(() => { toast.error('No se pudo cargar las temporadas disponibles.'); });
+      .catch((e) => { if (e.name !== 'AbortError') toast.error('No se pudo cargar las temporadas disponibles.'); });
+    return () => controller.abort();
   }, [idm, season]);
 
   const loadVehicle = useCallback(() => {
     if (!idm || !season) return;
     setLoading(true);
     setFetchError(false);
-    fetch(`${basePath}/api/gpro/vehicle?idm=${idm}&season=${season}`)
+    const controller = new AbortController();
+    fetch(`${basePath}/api/gpro/vehicle?idm=${idm}&season=${season}`, { signal: controller.signal })
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: VehicleRacePoint[]) => setData(Array.isArray(d) ? d : []))
-      .catch(() => {
+      .catch((e) => {
+        if (e.name === 'AbortError') return;
         toast.error('No se pudo cargar los datos del vehículo. Intenta de nuevo.');
         setFetchError(true);
       })
       .finally(() => setLoading(false));
+    return controller;
   }, [idm, season]);
 
-  useEffect(() => { loadVehicle(); }, [loadVehicle]);
+  useEffect(() => {
+    const controller = loadVehicle();
+    return () => controller?.abort();
+  }, [loadVehicle]);
 
   const latestRace = data?.[data?.length - 1];
   const parts = Object.keys(partLabels);
@@ -94,7 +110,14 @@ export function VehicleClient() {
                     <span className="text-xs text-slate-400">{partLabels?.[key] ?? key}</span>
                     <span className="text-xs font-mono text-blue-400">Lv{part?.lvl ?? 0}</span>
                   </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    role="progressbar"
+                    aria-label={`Desgaste de ${partLabels?.[key] ?? key}`}
+                    aria-valuenow={wear}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="h-2 bg-slate-700 rounded-full overflow-hidden"
+                  >
                     <div className={`h-full rounded-full ${wear > 80 ? 'bg-red-500' : wear > 50 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                       style={{ width: `${wear}%` }} />
                   </div>
@@ -109,16 +132,20 @@ export function VehicleClient() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>
+        <div className="flex items-center justify-center h-64">
+          <div role="status" aria-label="Cargando datos del vehículo">
+            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" aria-hidden="true" />
+          </div>
+        </div>
       ) : fetchError ? (
-        <div className="flex flex-col items-center justify-center h-64 gap-4 text-slate-500">
+        <div className="flex flex-col items-center justify-center h-64 gap-4 text-slate-400">
           <p>No se pudo cargar los datos del vehículo</p>
-          <button onClick={loadVehicle} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm border border-slate-600 transition-all">
+          <button onClick={loadVehicle} className="px-4 min-h-[44px] bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm border border-slate-600 transition-colors">
             Reintentar
           </button>
         </div>
       ) : data?.length === 0 ? (
-        <div className="flex items-center justify-center h-64 text-slate-500"><p>No hay datos de vehículo</p></div>
+        <div className="flex items-center justify-center h-64 text-slate-400"><p>No hay datos de vehículo</p></div>
       ) : (
         <>
           <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-5">

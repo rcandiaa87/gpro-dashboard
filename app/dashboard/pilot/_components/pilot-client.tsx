@@ -28,10 +28,12 @@ export function PilotClient() {
 
   useEffect(() => {
     if (!idm || season !== 0 || viewAll) return;
-    fetch(`${basePath}/api/gpro/seasons?idm=${idm}`)
+    const controller = new AbortController();
+    fetch(`${basePath}/api/gpro/seasons?idm=${idm}`, { signal: controller.signal })
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: SeasonRow[]) => { if (d?.[0]?.temporada) setSeason(d[0].temporada); })
-      .catch(() => { toast.error('No se pudo cargar las temporadas disponibles.'); });
+      .catch((e) => { if (e.name !== 'AbortError') toast.error('No se pudo cargar las temporadas disponibles.'); });
+    return () => controller.abort();
   }, [idm, season, viewAll]);
 
   const loadPilotData = useCallback(() => {
@@ -39,31 +41,37 @@ export function PilotClient() {
     if (!viewAll && !season) return;
     setLoading(true);
     setFetchError(false);
+    const controller = new AbortController();
     const url = viewAll ? `${basePath}/api/gpro/pilot-evolution?idm=${idm}` : `${basePath}/api/gpro/pilot-evolution?idm=${idm}&season=${season}`;
-    fetch(url)
+    fetch(url, { signal: controller.signal })
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: PilotEvolutionPoint[]) => setData(Array.isArray(d) ? d : []))
-      .catch(() => {
+      .catch((e) => {
+        if (e.name === 'AbortError') return;
         toast.error('No se pudo cargar la evolución del piloto. Intenta de nuevo.');
         setFetchError(true);
       })
       .finally(() => setLoading(false));
+    return controller;
   }, [idm, season, viewAll]);
 
-  useEffect(() => { loadPilotData(); }, [loadPilotData]);
+  useEffect(() => {
+    const controller = loadPilotData();
+    return () => controller?.abort();
+  }, [loadPilotData]);
 
   const latestData = data?.[data?.length - 1];
 
   const skills: Array<{ key: keyof PilotEvolutionPoint; label: string; color: string }> = [
-    { key: 'overall', label: 'Overall', color: '#60B5FF' },
-    { key: 'concentration', label: 'Concentración', color: '#80D8C3' },
-    { key: 'talent', label: 'Talento', color: '#FF9149' },
-    { key: 'experience', label: 'Experiencia', color: '#A19AD3' },
-    { key: 'stamina', label: 'Resistencia', color: '#FF6363' },
-    { key: 'aggressiveness', label: 'Agresividad', color: '#FF9898' },
-    { key: 'techInsight', label: 'Con. Técnico', color: '#FF90BB' },
-    { key: 'charisma', label: 'Carisma', color: '#72BF78' },
-    { key: 'motivation', label: 'Motivación', color: '#f59e0b' },
+    { key: 'overall', label: 'Overall', color: 'hsl(var(--chart-1))' },
+    { key: 'concentration', label: 'Concentración', color: 'hsl(var(--chart-2))' },
+    { key: 'talent', label: 'Talento', color: 'hsl(var(--chart-3))' },
+    { key: 'experience', label: 'Experiencia', color: 'hsl(var(--chart-10))' },
+    { key: 'stamina', label: 'Resistencia', color: 'hsl(var(--chart-7))' },
+    { key: 'aggressiveness', label: 'Agresividad', color: 'hsl(var(--chart-5))' },
+    { key: 'techInsight', label: 'Con. Técnico', color: 'hsl(var(--chart-11))' },
+    { key: 'charisma', label: 'Carisma', color: 'hsl(var(--chart-8))' },
+    { key: 'motivation', label: 'Motivación', color: 'hsl(var(--chart-9))' },
   ];
 
   return (
@@ -78,7 +86,7 @@ export function PilotClient() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button onClick={() => setViewAll(!viewAll)}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${viewAll ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-600'}`}>
+            className={`px-3 min-h-[44px] rounded-lg text-sm font-medium transition-colors ${viewAll ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-600'}`}>
             {viewAll ? 'Todas' : 'Por Temp.'}
           </button>
           {!viewAll && idm > 0 && <SeasonSelector selectedSeason={season} onSeasonChange={setSeason} idm={idm} />}
@@ -87,10 +95,10 @@ export function PilotClient() {
 
       {/* Current Stats */}
       {latestData && (
-        <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-2 lg:gap-0 lg:divide-x lg:divide-slate-800 bg-slate-900/60 rounded-xl border border-slate-800">
           {skills.map((s) => (
-            <div key={s.key} className="bg-slate-900/80 border border-slate-700/50 rounded-lg p-3 text-center">
-              <p className="text-xs text-slate-500 truncate">{s.label}</p>
+            <div key={s.key} className="px-4 py-3 text-center lg:first:rounded-l-xl lg:last:rounded-r-xl rounded-xl lg:rounded-none">
+              <p className="text-xs text-slate-400 mb-1">{s.label}</p>
               <p className="text-xl font-mono font-bold" style={{ color: s.color }}>{latestData?.[s.key] ?? 0}</p>
             </div>
           ))}
@@ -98,16 +106,20 @@ export function PilotClient() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>
+        <div className="flex items-center justify-center h-64">
+          <div role="status" aria-label="Cargando evolución del piloto">
+            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" aria-hidden="true" />
+          </div>
+        </div>
       ) : fetchError ? (
-        <div className="flex flex-col items-center justify-center h-64 gap-4 text-slate-500">
+        <div className="flex flex-col items-center justify-center h-64 gap-4 text-slate-400">
           <p>No se pudo cargar la evolución del piloto</p>
-          <button onClick={loadPilotData} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm border border-slate-600 transition-all">
+          <button onClick={loadPilotData} className="px-4 min-h-[44px] bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm border border-slate-600 transition-colors">
             Reintentar
           </button>
         </div>
       ) : data?.length === 0 ? (
-        <div className="flex items-center justify-center h-64 text-slate-500"><p>No hay datos de evolución</p></div>
+        <div className="flex items-center justify-center h-64 text-slate-400"><p>No hay datos de evolución</p></div>
       ) : (
         <div className="space-y-6">
           {skills.map((skill) => (

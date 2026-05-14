@@ -11,7 +11,7 @@ const jakartaSans = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-di
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
 
 export const metadata = {
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   title: 'GPRO Dashboard - Blue Dragons Racing',
   description: 'Dashboard de análisis para la escudería Blue Dragons en GPRO.net',
   icons: { icon: '/favicon.svg', shortcut: '/favicon.svg' },
