@@ -62,14 +62,14 @@ export function PilotClient() {
 
   const latestData = data?.[data?.length - 1];
 
-  const skills: Array<{ key: keyof PilotEvolutionPoint; label: string; color: string }> = [
+  const skills: Array<{ key: keyof PilotEvolutionPoint; label: string; title?: string; color: string }> = [
     { key: 'overall', label: 'Overall', color: 'hsl(var(--chart-1))' },
     { key: 'concentration', label: 'Concentración', color: 'hsl(var(--chart-2))' },
     { key: 'talent', label: 'Talento', color: 'hsl(var(--chart-3))' },
     { key: 'experience', label: 'Experiencia', color: 'hsl(var(--chart-10))' },
     { key: 'stamina', label: 'Resistencia', color: 'hsl(var(--chart-7))' },
     { key: 'aggressiveness', label: 'Agresividad', color: 'hsl(var(--chart-5))' },
-    { key: 'techInsight', label: 'Con. Técnico', color: 'hsl(var(--chart-11))' },
+    { key: 'techInsight', label: 'Con. Técnico', title: 'Conocimiento Técnico', color: 'hsl(var(--chart-11))' },
     { key: 'charisma', label: 'Carisma', color: 'hsl(var(--chart-8))' },
     { key: 'motivation', label: 'Motivación', color: 'hsl(var(--chart-9))' },
   ];
@@ -98,7 +98,7 @@ export function PilotClient() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-2 lg:gap-0 lg:divide-x lg:divide-slate-800 bg-slate-900/60 rounded-xl border border-slate-800">
           {skills.map((s) => (
             <div key={s.key} className="px-4 py-3 text-center lg:first:rounded-l-xl lg:last:rounded-r-xl rounded-xl lg:rounded-none">
-              <p className="text-xs text-slate-400 mb-1">{s.label}</p>
+              <p className="text-xs text-slate-400 mb-1" title={s.title}>{s.label}</p>
               <p className="text-xl font-mono font-bold" style={{ color: s.color }}>{latestData?.[s.key] ?? 0}</p>
             </div>
           ))}
@@ -126,7 +126,7 @@ export function PilotClient() {
             <div key={skill.key} className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-5">
               <h3 className="text-sm font-semibold text-slate-400 mb-4 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" style={{ color: skill.color }} />
-                {skill.label}
+                <span title={skill.title}>{skill.label}</span>
                 {data.length > 0 && (
                   <span className="ml-auto font-mono text-sm" style={{ color: skill.color }}>
                     {data[data.length - 1][skill.key] ?? 0}

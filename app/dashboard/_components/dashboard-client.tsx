@@ -132,7 +132,7 @@ export function DashboardClient() {
                     const pct = Math.min(((s.value ?? 0) / (s.max ?? 1)) * 100, 100);
                     return (
                       <div key={s.label} className="flex items-center gap-3">
-                        <span className="text-xs text-slate-400 w-24 shrink-0">{s.label}</span>
+                        <span className="text-xs text-slate-400 w-24 shrink-0" title={s.label === 'Con. Técnico' ? 'Conocimiento Técnico' : undefined}>{s.label}</span>
                         <div
                           role="progressbar"
                           aria-label={s.label}

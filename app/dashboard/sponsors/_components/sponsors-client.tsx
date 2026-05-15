@@ -99,16 +99,24 @@ const SEGMENT_COLORS = [
   'bg-green-500',
 ];
 
-function SegmentedBar({ value, size = 'md' }: { value: number; size?: 'sm' | 'md' }) {
+function SegmentedBar({ value, size = 'md', label }: { value: number; size?: 'sm' | 'md'; label?: string }) {
   const filled = value + 1;
   const h = size === 'sm' ? 'h-2' : 'h-3.5';
   const w = size === 'sm' ? 'w-3' : 'w-5';
   return (
-    <div className="flex gap-px">
+    <div
+      className="flex gap-px"
+      role="meter"
+      aria-valuenow={filled}
+      aria-valuemin={1}
+      aria-valuemax={7}
+      aria-label={label ? `${label}: ${filled} de 7` : `${filled} de 7`}
+    >
       {SEGMENT_COLORS.map((color, i) => (
         <div
           key={i}
           className={`${h} ${w} rounded-sm transition-colors ${i < filled ? color : 'bg-slate-700'}`}
+          aria-hidden="true"
         />
       ))}
     </div>
@@ -167,9 +175,10 @@ function AnswerCard({ ans }: { ans: SponsorAnswer }) {
   );
 }
 
-const DEFAULT_FILTERS: Record<SortKey, number> = {
-  finances: 0, expectations: 0, patience: 0,
-  reputation: 0, image: 0, negotiation: 0,
+type FilterRange = { min: number; max: number };
+const DEFAULT_FILTERS: Record<SortKey, FilterRange> = {
+  finances: { min: 0, max: 6 }, expectations: { min: 0, max: 6 }, patience: { min: 0, max: 6 },
+  reputation: { min: 0, max: 6 }, image: { min: 0, max: 6 }, negotiation: { min: 0, max: 6 },
 };
 
 export function SponsorsClient() {
@@ -181,7 +190,8 @@ export function SponsorsClient() {
   const [search, setSearch]       = useState('');
   const [onlyNeg, setOnlyNeg]     = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters]     = useState<Record<SortKey, number>>(DEFAULT_FILTERS);
+  const [filters, setFilters]     = useState<Record<SortKey, FilterRange>>(DEFAULT_FILTERS);
+  const [onlyUncontested, setOnlyUncontested] = useState(false);
   const [sortKey, setSortKey]     = useState<SortKey | null>(null);
   const [sortDir, setSortDir]     = useState<SortDir>('desc');
 
@@ -207,14 +217,18 @@ export function SponsorsClient() {
     return () => controller?.abort();
   }, [loadSponsors]);
 
-  const hasActiveFilters = Object.values(filters).some(v => v > 0);
+  const hasActiveFilters = Object.values(filters).some(v => v.min > 0 || v.max < 6);
 
   const filtered = (data?.sponsors ?? [])
     .filter(s => {
       if (onlyNeg && !s.isInNeg) return false;
       if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false;
       for (const { key } of ATTR_KEYS) {
-        if (s[key] < filters[key]) return false;
+        if (s[key] < filters[key].min || s[key] > filters[key].max) return false;
+      }
+      if (onlyUncontested) {
+        const neg = data?.activeNegotiations.find(n => String(n.sponsorId) === String(s.sponsorId));
+        if (neg && (neg.contested === 'Sí' || neg.contested === 'Si')) return false;
       }
       return true;
     })
@@ -313,7 +327,7 @@ export function SponsorsClient() {
                   <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Progreso</th>
                   <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Prioridad</th>
                   <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Disputado</th>
-                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Prog. prom. est.</th>
+                  <th title="Progreso promedio estimado" className="text-center px-4 py-2 text-xs font-semibold text-slate-300 cursor-help">Prog. prom. est.</th>
                 </tr>
               </thead>
               <tbody>
@@ -404,21 +418,32 @@ export function SponsorsClient() {
                 </button>
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={onlyNeg}
-                  onChange={e => setOnlyNeg(e.target.checked)}
-                  className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500"
-                />
-                <span className="text-xs text-slate-400">Solo negociaciones activas</span>
-              </label>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={onlyNeg}
+                    onChange={e => setOnlyNeg(e.target.checked)}
+                    className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-slate-400">Solo negociaciones activas</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={onlyUncontested}
+                    onChange={e => setOnlyUncontested(e.target.checked)}
+                    className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-slate-400">Solo no disputados</span>
+                </label>
+              </div>
 
               {/* Filter panel */}
               {showFilters && (
                 <div className="bg-slate-800/60 rounded-lg p-3 space-y-2 border border-slate-700/50">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filtrar por mínimo</span>
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filtrar por rango</span>
                     {hasActiveFilters && (
                       <button onClick={clearFilters} className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-400 transition-colors">
                         <X className="w-3 h-3" /> Limpiar
@@ -426,17 +451,40 @@ export function SponsorsClient() {
                     )}
                   </div>
                   {ATTR_KEYS.map(({ key, label }) => (
-                    <div key={key} className="flex items-center gap-3">
-                      <span className="text-xs text-slate-400 w-24 shrink-0">{label}</span>
-                      <input
-                        type="range"
-                        min={0}
-                        max={6}
-                        value={filters[key]}
-                        onChange={e => setFilters(f => ({ ...f, [key]: Number(e.target.value) }))}
-                        className="flex-1 accent-blue-500 h-1.5"
-                      />
-                      <span className="text-xs font-mono text-blue-400 w-3 text-right">{filters[key] + 1}</span>
+                    <div key={key} className="flex items-start gap-3">
+                      <span className="text-xs text-slate-400 w-24 shrink-0 pt-1">{label}</span>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500 w-5 shrink-0">Mín</span>
+                          <input
+                            type="range"
+                            min={0}
+                            max={6}
+                            value={filters[key].min}
+                            onChange={e => {
+                              const v = Number(e.target.value);
+                              setFilters(f => ({ ...f, [key]: { min: v, max: Math.max(v, f[key].max) } }));
+                            }}
+                            className="flex-1 accent-blue-500 h-1.5"
+                          />
+                          <span className="text-xs font-mono text-blue-400 w-3 text-right">{filters[key].min + 1}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500 w-5 shrink-0">Máx</span>
+                          <input
+                            type="range"
+                            min={0}
+                            max={6}
+                            value={filters[key].max}
+                            onChange={e => {
+                              const v = Number(e.target.value);
+                              setFilters(f => ({ ...f, [key]: { min: Math.min(v, f[key].min), max: v } }));
+                            }}
+                            className="flex-1 accent-green-500 h-1.5"
+                          />
+                          <span className="text-xs font-mono text-green-400 w-3 text-right">{filters[key].max + 1}</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -475,39 +523,50 @@ export function SponsorsClient() {
                 </div>
               ) : (
                 <ul>
-                  {filtered.map((s) => (
-                    <li key={s.sponsorId}>
-                      <button
-                        onClick={() => setSelected(s)}
-                        className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors border-b border-slate-800/60 hover:bg-slate-800/50 ${
-                          selected?.sponsorId === s.sponsorId
-                            ? 'bg-slate-800/80 border-l-2 border-l-blue-500'
-                            : ''
-                        }`}
-                      >
-                        <span className="text-xl leading-none mt-0.5 shrink-0">{natToFlag(s.natCode)}</span>
-                        <div className="flex-1 min-w-0 space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-white truncate">{s.name}</span>
-                            {s.isInNeg && (
-                              <span className="shrink-0 text-xs bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded-full">Neg.</span>
-                            )}
+                  {filtered.map((s) => {
+                    const neg = s.isInNeg
+                      ? data?.activeNegotiations.find(n => String(n.sponsorId) === String(s.sponsorId))
+                      : undefined;
+                    const isContested = !!neg && (neg.contested === 'Sí' || neg.contested === 'Si');
+                    return (
+                      <li key={s.sponsorId}>
+                        <button
+                          onClick={() => setSelected(s)}
+                          className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors border-b border-slate-800/60 hover:bg-slate-800/50 ${
+                            selected?.sponsorId === s.sponsorId
+                              ? 'bg-blue-600/10 ring-1 ring-inset ring-blue-500/40'
+                              : ''
+                          }`}
+                        >
+                          <span className="text-xl leading-none mt-0.5 shrink-0">{natToFlag(s.natCode)}</span>
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-sm font-medium text-white truncate">{s.name}</span>
+                              {s.isInNeg && (
+                                <span className="shrink-0 text-xs bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded-full">Negociación en proceso</span>
+                              )}
+                              {isContested && neg && (
+                                <span className={`shrink-0 text-xs bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded-full ${PROGRESS_COLOR[neg.textColor] ?? 'text-amber-400'}`}>
+                                  Disputado: {neg.progress}%
+                                </span>
+                              )}
+                            </div>
+                            {/* Attribute bars */}
+                            <div className="space-y-1">
+                              {ATTR_KEYS.map(({ key, label }) => (
+                                <div key={key} className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-500 w-20 shrink-0">{label}</span>
+                                  <SegmentedBar value={s[key]} size="sm" label={label} />
+                                  <span className="text-xs font-mono text-slate-500 w-3 text-right">{s[key] + 1}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          {/* Attribute bars */}
-                          <div className="space-y-1">
-                            {ATTR_KEYS.map(({ key, label }) => (
-                              <div key={key} className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500 w-20 shrink-0">{label}</span>
-                                <SegmentedBar value={s[key]} size="sm" />
-                                <span className="text-xs font-mono text-slate-500 w-3 text-right">{s[key] + 1}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-slate-600 shrink-0 mt-1" />
-                      </button>
-                    </li>
-                  ))}
+                          <ChevronRight className="w-4 h-4 text-slate-600 shrink-0 mt-1" />
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
@@ -533,6 +592,12 @@ export function SponsorsClient() {
                         <span className="ml-2 text-blue-400 font-medium">· En negociación activa</span>
                       )}
                     </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Prog. prom. estimado:
+                      <span className={`ml-1 font-semibold ${PROGRESS_COLOR[selected.progressColor] ?? 'text-slate-300'}`}>
+                        {selected.estAvgProgress}%
+                      </span>
+                    </p>
                   </div>
                 </div>
 
@@ -542,7 +607,7 @@ export function SponsorsClient() {
                   {ATTR_KEYS.map(({ key, label }) => (
                     <div key={key} className="flex items-center gap-3">
                       <span className="text-xs text-slate-400 w-24 shrink-0">{label}</span>
-                      <SegmentedBar value={selected[key]} size="md" />
+                      <SegmentedBar value={selected[key]} size="md" label={label} />
                       <span className="text-xs font-mono text-slate-300 w-3 text-right">{selected[key] + 1}</span>
                     </div>
                   ))}
