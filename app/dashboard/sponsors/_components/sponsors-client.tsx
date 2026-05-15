@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Search, Handshake, ChevronRight, SlidersHorizontal, X, ArrowUp, ArrowDown } from 'lucide-react';
+import * as SliderPrimitive from '@radix-ui/react-slider';
 import { useDashboardStore } from '@/lib/store';
 import { basePath } from '@/lib/api';
 import { getSponsorAnswers } from '@/lib/sponsor-logic';
@@ -451,40 +452,26 @@ export function SponsorsClient() {
                     )}
                   </div>
                   {ATTR_KEYS.map(({ key, label }) => (
-                    <div key={key} className="flex items-start gap-3">
-                      <span className="text-xs text-slate-400 w-24 shrink-0 pt-1">{label}</span>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-500 w-5 shrink-0">Mín</span>
-                          <input
-                            type="range"
-                            min={0}
-                            max={6}
-                            value={filters[key].min}
-                            onChange={e => {
-                              const v = Number(e.target.value);
-                              setFilters(f => ({ ...f, [key]: { min: v, max: Math.max(v, f[key].max) } }));
-                            }}
-                            className="flex-1 accent-blue-500 h-1.5"
-                          />
-                          <span className="text-xs font-mono text-blue-400 w-3 text-right">{filters[key].min + 1}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-500 w-5 shrink-0">Máx</span>
-                          <input
-                            type="range"
-                            min={0}
-                            max={6}
-                            value={filters[key].max}
-                            onChange={e => {
-                              const v = Number(e.target.value);
-                              setFilters(f => ({ ...f, [key]: { min: Math.min(v, f[key].min), max: v } }));
-                            }}
-                            className="flex-1 accent-green-500 h-1.5"
-                          />
-                          <span className="text-xs font-mono text-green-400 w-3 text-right">{filters[key].max + 1}</span>
-                        </div>
-                      </div>
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="text-xs text-slate-400 w-24 shrink-0">{label}</span>
+                      <span className="text-xs font-mono text-blue-400 w-3 text-right shrink-0">{filters[key].min + 1}</span>
+                      <SliderPrimitive.Root
+                        className="relative flex flex-1 touch-none select-none items-center"
+                        min={0}
+                        max={6}
+                        step={1}
+                        value={[filters[key].min, filters[key].max]}
+                        onValueChange={([min, max]: number[]) =>
+                          setFilters(f => ({ ...f, [key]: { min, max } }))
+                        }
+                      >
+                        <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-slate-700">
+                          <SliderPrimitive.Range className="absolute h-full bg-blue-500" />
+                        </SliderPrimitive.Track>
+                        <SliderPrimitive.Thumb className="block h-3.5 w-3.5 rounded-full border-2 border-blue-500 bg-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500" />
+                        <SliderPrimitive.Thumb className="block h-3.5 w-3.5 rounded-full border-2 border-blue-500 bg-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500" />
+                      </SliderPrimitive.Root>
+                      <span className="text-xs font-mono text-blue-400 w-3 shrink-0">{filters[key].max + 1}</span>
                     </div>
                   ))}
                 </div>
@@ -560,6 +547,13 @@ export function SponsorsClient() {
                                   <span className="text-xs font-mono text-slate-500 w-3 text-right">{s[key] + 1}</span>
                                 </div>
                               ))}
+                            </div>
+                            {/* Progreso estimado de negociación en el mercado */}
+                            <div className="flex items-center gap-1.5 pt-0.5 border-t border-slate-800/60 mt-1">
+                              <span className="text-xs text-slate-500">Prog. neg. estimado:</span>
+                              <span className={`text-xs font-semibold ${PROGRESS_COLOR[s.progressColor] ?? 'text-slate-400'}`}>
+                                {s.estAvgProgress}%
+                              </span>
                             </div>
                           </div>
                           <ChevronRight className="w-4 h-4 text-slate-600 shrink-0 mt-1" />
