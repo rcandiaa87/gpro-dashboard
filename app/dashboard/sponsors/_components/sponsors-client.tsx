@@ -57,22 +57,24 @@ const ATTR_KEYS: { key: SortKey; label: string }[] = [
 
 const SEGMENT_COLORS = [
   'bg-red-500',
-  'bg-red-400',
   'bg-orange-400',
   'bg-yellow-400',
-  'bg-lime-400',
+  'bg-yellow-400',
+  'bg-yellow-400',
+  'bg-lime-500',
   'bg-green-500',
 ];
 
-function SegmentedBar({ value, max = 6, size = 'md' }: { value: number; max?: number; size?: 'sm' | 'md' }) {
+function SegmentedBar({ value, size = 'md' }: { value: number; size?: 'sm' | 'md' }) {
+  const filled = value + 1;
   const h = size === 'sm' ? 'h-2' : 'h-3.5';
   const w = size === 'sm' ? 'w-3' : 'w-5';
   return (
     <div className="flex gap-px">
-      {Array.from({ length: max }).map((_, i) => (
+      {SEGMENT_COLORS.map((color, i) => (
         <div
           key={i}
-          className={`${h} ${w} rounded-sm transition-colors ${i < value ? SEGMENT_COLORS[i] : 'bg-slate-700'}`}
+          className={`${h} ${w} rounded-sm transition-colors ${i < filled ? color : 'bg-slate-700'}`}
         />
       ))}
     </div>
