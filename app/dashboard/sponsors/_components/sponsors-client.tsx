@@ -436,7 +436,7 @@ export function SponsorsClient() {
                         onChange={e => setFilters(f => ({ ...f, [key]: Number(e.target.value) }))}
                         className="flex-1 accent-blue-500 h-1.5"
                       />
-                      <span className="text-xs font-mono text-blue-400 w-3 text-right">{filters[key]}</span>
+                      <span className="text-xs font-mono text-blue-400 w-3 text-right">{filters[key] + 1}</span>
                     </div>
                   ))}
                 </div>
