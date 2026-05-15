@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Trophy, Car, User, Flag, Menu, X,
-  ChevronRight, Gauge
+  ChevronRight, Gauge, Handshake
 } from 'lucide-react';
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/dashboard/vehicle', label: 'Vehículo', icon: Car },
   { href: '/dashboard/standings', label: 'Clasificación', icon: Trophy },
   { href: '/dashboard/tracks', label: 'Circuitos', icon: Gauge },
+  { href: '/dashboard/sponsors', label: 'Sponsors', icon: Handshake },
 ];
 
 export function Sidebar() {
