@@ -39,8 +39,8 @@ const Q2_GOAL: Record<number, string> = {
 
 interface Q4Result { answer: string; note: string; note2?: string }
 const Q4_AMOUNT: Record<number, Q4Result> = {
-  6: { answer: 'INACEPTABLE', note: '100% de probabilidad de aumento', note2: 'También posible: 50% de probabilidad de aumento' },
-  5: { answer: 'INACEPTABLE', note: '50% de probabilidad de aumento' },
+  6: { answer: 'INACEPTABLE', note: '100% de probabilidad de aumento' },
+  5: { answer: 'INACEPTABLE', note: '100% de probabilidad de aumento', note2: 'También posible: 50% de probabilidad de aumento' },
   4: { answer: 'Demasiado baja', note: '100% de probabilidad de aumento' },
   3: { answer: 'Demasiado baja', note: '50% de probabilidad de aumento' },
   2: { answer: 'Un poco/demasiado bajo', note: '100% de probabilidad de aumento' },
