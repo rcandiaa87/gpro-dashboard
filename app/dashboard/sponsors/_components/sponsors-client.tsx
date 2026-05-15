@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Search, Handshake, CircleDot, ChevronRight } from 'lucide-react';
+import { Loader2, Search, Handshake, CircleDot, ChevronRight, SlidersHorizontal, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { useDashboardStore } from '@/lib/store';
 import { basePath } from '@/lib/api';
 import { getSponsorAnswers } from '@/lib/sponsor-logic';
@@ -43,25 +43,45 @@ interface SponsorsData {
   activeContracts: ActiveContract[];
 }
 
+type SortKey = keyof SponsorAttributes;
+type SortDir = 'asc' | 'desc';
+
+const ATTR_KEYS: { key: SortKey; label: string }[] = [
+  { key: 'finances',     label: 'Finanzas' },
+  { key: 'expectations', label: 'Expectativas' },
+  { key: 'patience',     label: 'Paciencia' },
+  { key: 'reputation',   label: 'Reputación' },
+  { key: 'image',        label: 'Imagen' },
+  { key: 'negotiation',  label: 'Negociación' },
+];
+
+const SEGMENT_COLORS = [
+  'bg-red-500',
+  'bg-red-400',
+  'bg-orange-400',
+  'bg-yellow-400',
+  'bg-lime-400',
+  'bg-green-500',
+];
+
+function SegmentedBar({ value, max = 6, size = 'md' }: { value: number; max?: number; size?: 'sm' | 'md' }) {
+  const h = size === 'sm' ? 'h-2' : 'h-3.5';
+  const w = size === 'sm' ? 'w-3' : 'w-5';
+  return (
+    <div className="flex gap-px">
+      {Array.from({ length: max }).map((_, i) => (
+        <div
+          key={i}
+          className={`${h} ${w} rounded-sm transition-colors ${i < value ? SEGMENT_COLORS[i] : 'bg-slate-700'}`}
+        />
+      ))}
+    </div>
+  );
+}
+
 function natToFlag(natCode: string): string {
   if (!natCode || natCode.length !== 2) return '🏳';
   return natCode.toUpperCase().split('').map(c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))).join('');
-}
-
-function AttributeBar({ label, value, max = 6 }: { label: string; value: number; max?: number }) {
-  const pct = Math.round((value / max) * 100);
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-slate-400 w-24 shrink-0">{label}</span>
-      <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full bg-blue-500 transition-all"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="text-xs font-mono text-slate-300 w-4 text-right">{value}</span>
-    </div>
-  );
 }
 
 const ANSWER_COLORS: Record<number, string> = {
@@ -108,14 +128,23 @@ function AnswerCard({ ans }: { ans: SponsorAnswer }) {
   );
 }
 
+const DEFAULT_FILTERS: Record<SortKey, number> = {
+  finances: 0, expectations: 0, patience: 0,
+  reputation: 0, image: 0, negotiation: 0,
+};
+
 export function SponsorsClient() {
   const { idm } = useDashboardStore();
-  const [data, setData] = useState<SponsorsData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [data, setData]           = useState<SponsorsData | null>(null);
+  const [loading, setLoading]     = useState(false);
   const [fetchError, setFetchError] = useState(false);
-  const [selected, setSelected] = useState<Sponsor | null>(null);
-  const [search, setSearch] = useState('');
-  const [onlyNeg, setOnlyNeg] = useState(false);
+  const [selected, setSelected]   = useState<Sponsor | null>(null);
+  const [search, setSearch]       = useState('');
+  const [onlyNeg, setOnlyNeg]     = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters]     = useState<Record<SortKey, number>>(DEFAULT_FILTERS);
+  const [sortKey, setSortKey]     = useState<SortKey | null>(null);
+  const [sortDir, setSortDir]     = useState<SortDir>('desc');
 
   const loadSponsors = useCallback(() => {
     if (!idm) return;
@@ -139,11 +168,34 @@ export function SponsorsClient() {
     return () => controller?.abort();
   }, [loadSponsors]);
 
-  const filtered = (data?.sponsors ?? []).filter(s => {
-    if (onlyNeg && !s.isInNeg) return false;
-    if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const hasActiveFilters = Object.values(filters).some(v => v > 0);
+
+  const filtered = (data?.sponsors ?? [])
+    .filter(s => {
+      if (onlyNeg && !s.isInNeg) return false;
+      if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false;
+      for (const { key } of ATTR_KEYS) {
+        if (s[key] < filters[key]) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (!sortKey) return 0;
+      return sortDir === 'desc' ? b[sortKey] - a[sortKey] : a[sortKey] - b[sortKey];
+    });
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  }
+
+  function clearFilters() {
+    setFilters(DEFAULT_FILTERS);
+  }
 
   const answers: SponsorAnswer[] = selected ? getSponsorAnswers(selected, data?.group ?? '') : [];
 
@@ -160,7 +212,7 @@ export function SponsorsClient() {
         </div>
       </div>
 
-      {/* Active contracts summary */}
+      {/* Active contracts */}
       {(data?.activeContracts?.length ?? 0) > 0 && (
         <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-4">
           <h3 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Contratos activos</h3>
@@ -178,7 +230,7 @@ export function SponsorsClient() {
         </div>
       )}
 
-      {/* Active negotiations summary */}
+      {/* Active negotiations */}
       {(data?.activeNegotiations?.length ?? 0) > 0 && (
         <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-4">
           <h3 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Negociaciones en curso</h3>
@@ -216,20 +268,33 @@ export function SponsorsClient() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sponsor list */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+          {/* ── Sponsor list ── */}
           <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl flex flex-col">
+
+            {/* Search + filter toggle */}
             <div className="p-4 border-b border-slate-700/50 space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type="text"
-                  placeholder="Buscar sponsor..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Buscar sponsor..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <button
+                  onClick={() => setShowFilters(f => !f)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-colors ${showFilters ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                </button>
               </div>
+
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -239,12 +304,65 @@ export function SponsorsClient() {
                 />
                 <span className="text-xs text-slate-400">Solo negociaciones activas</span>
               </label>
+
+              {/* Filter panel */}
+              {showFilters && (
+                <div className="bg-slate-800/60 rounded-lg p-3 space-y-2 border border-slate-700/50">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filtrar por mínimo</span>
+                    {hasActiveFilters && (
+                      <button onClick={clearFilters} className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-400 transition-colors">
+                        <X className="w-3 h-3" /> Limpiar
+                      </button>
+                    )}
+                  </div>
+                  {ATTR_KEYS.map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="text-xs text-slate-400 w-24 shrink-0">{label}</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={6}
+                        value={filters[key]}
+                        onChange={e => setFilters(f => ({ ...f, [key]: Number(e.target.value) }))}
+                        className="flex-1 accent-blue-500 h-1.5"
+                      />
+                      <span className="text-xs font-mono text-blue-400 w-3 text-right">{filters[key]}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Sort buttons */}
+              <div className="flex flex-wrap gap-1.5">
+                {ATTR_KEYS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => handleSort(key)}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs border transition-colors ${
+                      sortKey === key
+                        ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600'
+                    }`}
+                  >
+                    {label}
+                    {sortKey === key && (
+                      sortDir === 'desc'
+                        ? <ArrowDown className="w-3 h-3" />
+                        : <ArrowUp className="w-3 h-3" />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-xs text-slate-600">{filtered.length} sponsor{filtered.length !== 1 ? 's' : ''}</p>
             </div>
 
-            <div className="flex-1 overflow-y-auto max-h-[520px]">
+            {/* List */}
+            <div className="overflow-y-auto max-h-[600px]">
               {filtered.length === 0 ? (
                 <div className="flex items-center justify-center h-32 text-slate-500 text-sm">
-                  No hay sponsors
+                  No hay sponsors con esos filtros
                 </div>
               ) : (
                 <ul>
@@ -252,26 +370,32 @@ export function SponsorsClient() {
                     <li key={s.sponsorId}>
                       <button
                         onClick={() => setSelected(s)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-slate-800/60 hover:bg-slate-800/50 ${
-                          selected?.sponsorId === s.sponsorId ? 'bg-slate-800/80 border-l-2 border-l-blue-500' : ''
+                        className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors border-b border-slate-800/60 hover:bg-slate-800/50 ${
+                          selected?.sponsorId === s.sponsorId
+                            ? 'bg-slate-800/80 border-l-2 border-l-blue-500'
+                            : ''
                         }`}
                       >
-                        <span className="text-lg leading-none" aria-hidden="true">{natToFlag(s.natCode)}</span>
-                        <div className="flex-1 min-w-0">
+                        <span className="text-xl leading-none mt-0.5 shrink-0">{natToFlag(s.natCode)}</span>
+                        <div className="flex-1 min-w-0 space-y-1.5">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-white truncate">{s.name}</span>
                             {s.isInNeg && (
                               <span className="shrink-0 text-xs bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded-full">Neg.</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 mt-0.5">
-                            <span className="text-xs text-slate-500">Fin. {s.finances}</span>
-                            <span className="text-xs text-slate-500">Img. {s.image}</span>
-                            <span className="text-xs text-slate-500">Pac. {s.patience}</span>
-                            <span className="text-xs text-slate-500">Exp. {s.expectations}</span>
+                          {/* Attribute bars */}
+                          <div className="space-y-1">
+                            {ATTR_KEYS.map(({ key, label }) => (
+                              <div key={key} className="flex items-center gap-2">
+                                <span className="text-xs text-slate-500 w-20 shrink-0">{label}</span>
+                                <SegmentedBar value={s[key]} size="sm" />
+                                <span className="text-xs font-mono text-slate-500 w-3 text-right">{s[key]}</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-slate-600 shrink-0 mt-1" />
                       </button>
                     </li>
                   ))}
@@ -280,15 +404,15 @@ export function SponsorsClient() {
             </div>
           </div>
 
-          {/* Detail panel */}
-          <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl flex flex-col">
+          {/* ── Detail panel ── */}
+          <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl">
             {!selected ? (
-              <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-500 gap-2">
+              <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-500 gap-2 p-8">
                 <Handshake className="w-10 h-10 text-slate-700" />
-                <p className="text-sm">Selecciona un sponsor para ver las respuestas recomendadas</p>
+                <p className="text-sm text-center">Selecciona un sponsor para ver las respuestas recomendadas</p>
               </div>
             ) : (
-              <div className="p-5 space-y-5 overflow-y-auto">
+              <div className="p-5 space-y-5">
                 {/* Sponsor header */}
                 <div className="flex items-center gap-3">
                   <span className="text-3xl leading-none">{natToFlag(selected.natCode)}</span>
@@ -303,15 +427,16 @@ export function SponsorsClient() {
                   </div>
                 </div>
 
-                {/* Attribute bars */}
-                <div className="bg-slate-800/50 rounded-lg p-4 space-y-2.5">
-                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Atributos</h3>
-                  <AttributeBar label="Finanzas" value={selected.finances} />
-                  <AttributeBar label="Expectativas" value={selected.expectations} />
-                  <AttributeBar label="Paciencia" value={selected.patience} />
-                  <AttributeBar label="Reputación" value={selected.reputation} />
-                  <AttributeBar label="Imagen" value={selected.image} />
-                  <AttributeBar label="Negociación" value={selected.negotiation} />
+                {/* Attribute bars (large) */}
+                <div className="bg-slate-800/50 rounded-lg p-4 space-y-3">
+                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Atributos</h3>
+                  {ATTR_KEYS.map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="text-xs text-slate-400 w-24 shrink-0">{label}</span>
+                      <SegmentedBar value={selected[key]} size="md" />
+                      <span className="text-xs font-mono text-slate-300 w-3 text-right">{selected[key]}</span>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Recommended answers */}
@@ -324,6 +449,7 @@ export function SponsorsClient() {
               </div>
             )}
           </div>
+
         </div>
       )}
     </div>
