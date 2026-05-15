@@ -121,6 +121,9 @@ function AnswerCard({ ans }: { ans: SponsorAnswer }) {
           {ans.note && (
             <p className="text-xs text-slate-500 mt-1 italic">{ans.note}</p>
           )}
+          {ans.note2 && (
+            <p className="text-xs text-amber-500/80 mt-0.5 italic">{ans.note2}</p>
+          )}
         </div>
         {ans.attribute !== '—' && (
           <span className="shrink-0 text-xs text-slate-500 hidden sm:block">↑ {ans.attribute}</span>
@@ -392,7 +395,7 @@ export function SponsorsClient() {
                               <div key={key} className="flex items-center gap-2">
                                 <span className="text-xs text-slate-500 w-20 shrink-0">{label}</span>
                                 <SegmentedBar value={s[key]} size="sm" />
-                                <span className="text-xs font-mono text-slate-500 w-3 text-right">{s[key]}</span>
+                                <span className="text-xs font-mono text-slate-500 w-3 text-right">{s[key] + 1}</span>
                               </div>
                             ))}
                           </div>
@@ -436,7 +439,7 @@ export function SponsorsClient() {
                     <div key={key} className="flex items-center gap-3">
                       <span className="text-xs text-slate-400 w-24 shrink-0">{label}</span>
                       <SegmentedBar value={selected[key]} size="md" />
-                      <span className="text-xs font-mono text-slate-300 w-3 text-right">{selected[key]}</span>
+                      <span className="text-xs font-mono text-slate-300 w-3 text-right">{selected[key] + 1}</span>
                     </div>
                   ))}
                 </div>
