@@ -47,6 +47,14 @@ interface SponsorsData {
   allCarSpots: CarSpot[];
 }
 
+const PRIORITY_LABEL: Record<string, string> = {
+  '1': 'Muy baja',
+  '2': 'Baja',
+  '3': 'Normal',
+  '4': 'Alta',
+  '5': 'Muy alta',
+};
+
 const PROGRESS_COLOR: Record<string, string> = {
   lime:   'text-green-400',
   yellow: 'text-yellow-400',
@@ -340,9 +348,8 @@ export function SponsorsClient() {
                       </td>
                       <td className="px-4 py-2.5 text-center">
                         <span className={`font-semibold ${progColor}`}>{n.progress}%</span>
-                        <span className="text-slate-500 text-xs ml-1">({n.avgProgress}%)</span>
                       </td>
-                      <td className="px-4 py-2.5 text-center text-slate-300 text-xs">{n.priority}</td>
+                      <td className="px-4 py-2.5 text-center text-slate-300 text-xs">{PRIORITY_LABEL[n.priority] ?? n.priority}</td>
                       <td className="px-4 py-2.5 text-center">
                         <span className={n.contested === 'Sí' || n.contested === 'Si' ? 'text-amber-400 text-xs' : 'text-slate-400 text-xs'}>
                           {n.contested}
