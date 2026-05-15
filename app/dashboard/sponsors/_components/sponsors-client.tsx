@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Search, Handshake, CircleDot, ChevronRight, SlidersHorizontal, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { Loader2, Search, Handshake, ChevronRight, SlidersHorizontal, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { useDashboardStore } from '@/lib/store';
 import { basePath } from '@/lib/api';
 import { getSponsorAnswers } from '@/lib/sponsor-logic';
@@ -21,17 +21,21 @@ interface ActiveNegotiation {
   name: string;
   sponsorId: number;
   carSpotName: string;
+  amount: number;
+  duration: number;
   progress: string;
   avgProgress: string;
+  priority: string;
   contested: string;
   textColor: string;
 }
 
-interface ActiveContract {
+interface CarSpot {
   name: string;
   sponsorId: number;
   carSpotName: string;
   amount: number | string;
+  contractStatus: number;
   racesLeft: number | string;
   satisfaction: number | string;
 }
@@ -40,7 +44,29 @@ interface SponsorsData {
   group: string;
   sponsors: Sponsor[];
   activeNegotiations: ActiveNegotiation[];
-  activeContracts: ActiveContract[];
+  allCarSpots: CarSpot[];
+}
+
+const PROGRESS_COLOR: Record<string, string> = {
+  lime:   'text-green-400',
+  yellow: 'text-yellow-400',
+  orange: 'text-orange-400',
+  red:    'text-red-400',
+};
+
+function fmt(val: number | string, suffix = ''): string {
+  if (val === '-' || val === null || val === undefined) return '-';
+  if (typeof val === 'number' && val < 0) return '-';
+  return `${val}${suffix}`;
+}
+
+function fmtMoney(val: number | string): string {
+  if (val === '-' || val === null || val === undefined) return '-';
+  if (typeof val === 'number') {
+    if (val < 0) return '-';
+    return `$${val.toLocaleString()}`;
+  }
+  return String(val);
 }
 
 type SortKey = keyof SponsorAttributes;
@@ -217,46 +243,117 @@ export function SponsorsClient() {
         </div>
       </div>
 
-      {/* Active contracts */}
-      {(data?.activeContracts?.length ?? 0) > 0 && (
-        <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-4">
-          <h3 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Contratos activos</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {data!.activeContracts.map((c) => (
-              <div key={c.sponsorId} className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
-                <CircleDot className="w-3 h-3 text-emerald-400 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{c.name}</p>
-                  <p className="text-xs text-slate-400">{c.carSpotName} · {c.racesLeft} carreras</p>
-                </div>
-              </div>
-            ))}
+      {/* ── Tabla contratos vigentes ── */}
+      {(data?.allCarSpots?.length ?? 0) > 0 && (
+        <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 bg-slate-800/60 border-b border-slate-700/50">
+            <h3 className="text-sm font-semibold text-white text-center">Contratos de sponsors vigentes y espacios en el auto</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700/50">
+                  <th className="text-left px-4 py-2 text-xs font-semibold text-slate-300">Nombre del Sponsor</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Lugar del auto</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Importe por carrera</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Estado</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Carreras restantes</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Satisfacción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data!.allCarSpots.map((c, i) => (
+                  <tr key={i} className="border-b border-slate-800/60 hover:bg-slate-800/30 transition-colors">
+                    <td className="px-4 py-2.5">
+                      {c.contractStatus === 1
+                        ? <span className="font-medium text-white">{c.name}</span>
+                        : <span className="text-orange-400 font-medium">Lugar vacío</span>
+                      }
+                    </td>
+                    <td className="px-4 py-2.5 text-center text-slate-300">{c.carSpotName}</td>
+                    <td className="px-4 py-2.5 text-center text-slate-300">{fmtMoney(c.amount)}</td>
+                    <td className="px-4 py-2.5 text-center">
+                      {c.contractStatus === 1
+                        ? <span className="text-emerald-400 text-xs font-medium">Activo</span>
+                        : <span className="text-slate-500">-</span>
+                      }
+                    </td>
+                    <td className="px-4 py-2.5 text-center text-slate-300">{fmt(c.racesLeft)}</td>
+                    <td className="px-4 py-2.5 text-center text-slate-300">{fmt(c.satisfaction)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
-      {/* Active negotiations */}
+      {/* ── Tabla negociaciones en curso ── */}
       {(data?.activeNegotiations?.length ?? 0) > 0 && (
-        <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-4">
-          <h3 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Negociaciones en curso</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {data!.activeNegotiations.map((n) => (
-              <button
-                key={n.sponsorId}
-                onClick={() => {
-                  const s = data?.sponsors.find(sp => String(sp.sponsorId) === String(n.sponsorId));
-                  if (s) setSelected(s);
-                }}
-                className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2 text-left hover:bg-blue-500/20 transition-colors w-full"
-              >
-                <Handshake className="w-3 h-3 text-blue-400 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-white truncate">{n.name}</p>
-                  <p className="text-xs text-slate-400">{n.carSpotName} · {n.progress}% progreso</p>
-                </div>
-                <ChevronRight className="w-3 h-3 text-slate-500 shrink-0" />
-              </button>
-            ))}
+        <div className="bg-slate-900/80 border border-slate-700/50 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 bg-slate-800/60 border-b border-slate-700/50">
+            <h3 className="text-sm font-semibold text-white text-center">Negociaciones en proceso</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700/50">
+                  <th className="text-left px-4 py-2 text-xs font-semibold text-slate-300">Nombre del Sponsor</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Lugar del auto</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Cantidad</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Duración</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Progreso</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Prioridad</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Disputado</th>
+                  <th className="text-center px-4 py-2 text-xs font-semibold text-slate-300">Prog. prom. est.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data!.activeNegotiations.map((n) => {
+                  const progColor = PROGRESS_COLOR[n.textColor] ?? 'text-slate-300';
+                  const amountProp = n.amount > 0;
+                  const durationProp = n.duration > 0;
+                  return (
+                    <tr
+                      key={n.sponsorId}
+                      className="border-b border-slate-800/60 hover:bg-slate-800/30 transition-colors cursor-pointer"
+                      onClick={() => {
+                        const s = data?.sponsors.find(sp => String(sp.sponsorId) === String(n.sponsorId));
+                        if (s) setSelected(s);
+                      }}
+                    >
+                      <td className="px-4 py-2.5 font-semibold text-white">{n.name}</td>
+                      <td className="px-4 py-2.5 text-center text-slate-300">
+                        {n.carSpotName || <span className="text-slate-500">-</span>}
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        {amountProp
+                          ? <span className="text-slate-300">{fmtMoney(n.amount)}</span>
+                          : <span className="text-orange-400 text-xs">No propuesto</span>
+                        }
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        {durationProp
+                          ? <span className="text-slate-300">{n.duration} carreras</span>
+                          : <span className="text-orange-400 text-xs">No propuesto</span>
+                        }
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className={`font-semibold ${progColor}`}>{n.progress}%</span>
+                        <span className="text-slate-500 text-xs ml-1">({n.avgProgress}%)</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-center text-slate-300 text-xs">{n.priority}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className={n.contested === 'Sí' || n.contested === 'Si' ? 'text-amber-400 text-xs' : 'text-slate-400 text-xs'}>
+                          {n.contested}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-center text-slate-400 text-xs">{n.avgProgress}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

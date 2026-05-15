@@ -108,28 +108,30 @@ export async function GET(req: Request) {
       name: decodeHtml(n.name),
       sponsorId: n.sponsorId,
       carSpotName: decodeHtml(n.carSpotName),
+      amount: n.amount,
+      duration: n.duration,
       progress: n.progress,
       avgProgress: n.avgProgress,
+      priority: decodeHtml(n.priority),
       contested: decodeHtml(n.contested),
       textColor: n.textColor,
     }));
 
-    const activeContracts = carSpots
-      .filter((c) => c.contractStatus === 1)
-      .map((c) => ({
-        name: decodeHtml(c.name),
-        sponsorId: c.sponsorId,
-        carSpotName: decodeHtml(c.carSpotName),
-        amount: c.amount,
-        racesLeft: c.racesLeft,
-        satisfaction: c.satisfaction,
-      }));
+    const allCarSpots = carSpots.map((c) => ({
+      name: decodeHtml(c.name),
+      sponsorId: c.sponsorId,
+      carSpotName: decodeHtml(c.carSpotName),
+      amount: c.amount,
+      contractStatus: c.contractStatus,
+      racesLeft: c.racesLeft,
+      satisfaction: c.satisfaction,
+    }));
 
     return NextResponse.json({
       group,
       sponsors,
       activeNegotiations,
-      activeContracts,
+      allCarSpots,
     });
   } catch (e: unknown) {
     return apiError(500, 'Error al cargar sponsors', e);
